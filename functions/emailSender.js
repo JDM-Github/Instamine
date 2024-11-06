@@ -1,16 +1,14 @@
-const nodemailer = require('nodemailer');
-
+const nodemailer = require("nodemailer");
 
 // You can use this for your website, Makes authentication possible.
 // You just need to think how you use this. This is same for the sms authentication
 let transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: 'jdmaster888@gmail.com',
-        pass: '' // Generated password from Google.
-    }
+	service: "gmail",
+	auth: {
+		user: "jdmaster888@gmail.com",
+		pass: "mxvj qric haou eibj",
+	},
 });
-
 
 /**
  * Function to send an email
@@ -21,20 +19,20 @@ let transporter = nodemailer.createTransport({
  * @param {function} callback - Callback function to handle success or error
  */
 function sendEmail(to, subject, text, html, callback) {
-    const mailOptions = {
-        from: 'jdmaster888@gmail.com',
-        to: to,
-        subject: subject,
-        text: text,
-        html: html
-    };
+	const mailOptions = {
+		from: "jdmaster888@gmail.com",
+		to: to,
+		subject: subject,
+		text: text,
+		html: html,
+	};
 
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            return callback(error, null);
-        }
-        callback(null, `Message sent: ${info.messageId}`);
-    });
+	transporter.sendMail(mailOptions, (error, info) => {
+		if (error) {
+			return callback(error, null);
+		}
+		callback(null, `Message sent: ${info.messageId}`);
+	});
 }
 
 module.exports = sendEmail;

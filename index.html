@@ -1,0 +1,65 @@
+<html>
+	<head>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				background-color: #f4f4f4;
+				margin: 0;
+				padding: 0;
+			}
+			.container {
+				background-color: white;
+				width: 100%;
+				max-width: 600px;
+				margin: 0 auto;
+				padding: 20px;
+				text-align: center;
+				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+				border-radius: 8px;
+			}
+			h1 {
+				color: #333;
+				font-size: 24px;
+			}
+			.logo {
+				margin: 20px 0;
+			}
+			.verify-code {
+				font-size: 24px;
+				font-weight: bold;
+				color: #4caf50;
+				margin: 20px 0;
+				letter-spacing: 2px;
+			}
+			.footer {
+				margin-top: 40px;
+				color: #999;
+				font-size: 14px;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<img
+				src="https://example.com/instamine-logo.png"
+				alt="InstaMine Logo"
+				class="logo"
+				width="120"
+				height="120"
+			/>
+			<h1>Verify Your InstaMine Account</h1>
+			<p>
+				Thank you for signing up with InstaMine. Please use the code
+				below to verify your account:
+			</p>
+			<div class="verify-code">${code}</div>
+			<p>If you did not request this, please ignore this email.</p>
+			<div class="footer">
+				<p>
+					&copy; ${new Date().getFullYear()} InstaMine. All rights
+					reserved.
+				</p>
+			</div>
+		</div>
+	</body>
+</html>

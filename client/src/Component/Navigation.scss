@@ -1,0 +1,202 @@
+.admin-navigation {
+	z-index: 1;
+	position: relative;
+	width: 250px;
+	min-width: 250px;
+	background-color: #385724;
+	box-shadow: 5px 0 5px #00000055;
+	padding: 0 10px;
+	box-sizing: border-box;
+
+	.logo-text {
+		display: flex;
+		position: relative;
+		width: 100%;
+		height: 50px;
+
+		.logo {
+			position: relative;
+			top: 10%;
+			height: 80%;
+			aspect-ratio: 1;
+			border-radius: 50%;
+			border: 1px solid #aaa;
+			margin-right: 10px;
+		}
+
+		.text {
+			position: relative;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			font-size: 1.5rem;
+			font-weight: bold;
+			color: #e2f0d9;
+		}
+	}
+
+	.user-account {
+		display: flex;
+		position: relative;
+		width: 100%;
+		height: 50px;
+		background-color: #548235;
+		border-radius: 18px;
+		padding: 5px;
+		box-sizing: border-box;
+
+		.logo {
+			position: relative;
+			top: 10%;
+			height: 80%;
+			aspect-ratio: 1;
+			border-radius: 50%;
+			border: 1px solid #aaa;
+			margin-right: 10px;
+		}
+		.texts {
+			position: relative;
+			* {
+				display: flex;
+				align-items: center;
+				height: 50%;
+				font-weight: bold;
+				color: #e2f0d9;
+			}
+			.name {
+				color: #a9d18e;
+			}
+		}
+	}
+
+	.subscribe {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		height: 30px;
+		text-align: center;
+
+		margin-top: 10px;
+		color: white;
+		font-weight: bold;
+		font-size: 1.2rem;
+		background-color: #7cbe4f;
+		border: 2px solid white;
+		user-select: none;
+		cursor: pointer;
+
+		&:hover {
+			background-color: #6ca745;
+		}
+
+		&.GOLD {
+			background-color: goldenrod;
+			background-image: url("https://www.transparenttextures.com/patterns/gold-scale.png"); /* Adding a textured background */
+			background-size: cover;
+			background-blend-mode: overlay;
+			&:hover {
+				background-color: rgb(168, 129, 29);
+			}
+		}
+
+		&.MEMBER {
+			background-color: #7ea5aa;
+			background-image: url("https://www.transparenttextures.com/patterns/diamond-upholstery.png");
+			background-size: cover;
+			background-blend-mode: overlay;
+			&:hover {
+				background-color: #4d6c70;
+			}
+		}
+	}
+
+	hr {
+		background-color: #76b349;
+		color: #76b349;
+	}
+
+	.search-container {
+		display: flex;
+		align-items: center;
+		position: relative;
+		width: 100%;
+		height: 30px;
+		margin-top: 10px;
+		margin-bottom: 15px;
+
+		.search-input {
+			width: 100%;
+			height: 100%;
+
+			background-color: #548235;
+			border: 1px solid #76b349;
+			outline: none;
+			padding: 0 30px 0 10px;
+			color: #e2f0d9;
+
+			&::placeholder {
+				color: #a9d18e;
+			}
+		}
+
+		.search-btn {
+			position: absolute;
+			right: 0px;
+			height: 100%;
+			background: transparent;
+			border: none;
+			cursor: pointer;
+			font-size: 18px;
+			outline: none;
+			color: #a9d18e;
+
+			&:hover {
+				color: #e2f0d9;
+			}
+		}
+	}
+
+	.nav-items {
+		display: flex;
+		align-items: center;
+		position: relative;
+		width: 100%;
+		height: 30px;
+		background: transparent;
+		border: 1px solid #76b349;
+		text-decoration: none;
+
+		& > * {
+			display: flex;
+			align-items: center;
+			color: #e2f0d9;
+			font-weight: bold;
+		}
+		& > :first-child {
+			margin-left: 10px;
+		}
+		.nav-icon {
+			margin-right: 10px;
+			width: 8%;
+		}
+
+		&:hover {
+			background: #61943d;
+			cursor: pointer;
+		}
+	}
+	.active-link {
+		background: #537e34;
+		user-select: none;
+		&:hover {
+			background: #537e34;
+		}
+	}
+
+	.nav-items:last-child {
+		position: absolute;
+		width: 90%;
+		bottom: 10px;
+	}
+}
