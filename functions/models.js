@@ -112,6 +112,11 @@ const User = sequelize.define(
 			type: DataTypes.STRING,
 			defaultValue: "",
 		},
+		isArchived: {
+			type: DataTypes.BOOLEAN,
+			allowNull: false,
+			defaultValue: false,
+		},
 	},
 	{
 		timestamps: true,
@@ -203,6 +208,11 @@ const Product = sequelize.define(
 		category: {
 			type: DataTypes.STRING,
 			allowNull: false,
+		},
+		isArchived: {
+			type: DataTypes.BOOLEAN,
+			allowNull: false,
+			defaultValue: false,
 		},
 	},
 	{

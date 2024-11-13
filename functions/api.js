@@ -16,7 +16,7 @@ const {
 	cartRouter,
 } = require("./routers");
 
-DEVELOPMENT = true;
+DEVELOPMENT = false;
 if (DEVELOPMENT) {
 	app.use(
 		cors({
@@ -36,7 +36,7 @@ router.use("/user", userRouter);
 router.use("/chats", chatRouter);
 router.use("/product", productRouter);
 router.use("/orders", orderRouter);
-router.use("/cart", cartRouter);	
+router.use("/cart", cartRouter);
 
 router.get("/reset", async (req, res) => {
 	await sequelize.sync({ force: true });

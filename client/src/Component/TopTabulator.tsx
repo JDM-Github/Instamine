@@ -35,7 +35,7 @@ function IconSelect({ selectOptions }) {
 					...base,
 					border: "none",
 					outline: "none",
-					background: "#76b349",
+					background: "#eb11ce",
 					minWidth: "100px",
 					width: "100%",
 					color: "white",

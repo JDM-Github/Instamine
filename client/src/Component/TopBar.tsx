@@ -16,27 +16,10 @@ export default function TopBar({ clickHandler }) {
 
 	return (
 		<div className="topbar">
-			<div className="profile-container" onClick={handleProfileClick}>
-				<div className="profile-icon">👤</div>
-				{menuOpen && (
-					<div className="dropdown-menu">
-						<div className="dropdown-item" onClick={clickHandler}>
-							<FontAwesomeIcon
-								icon={faUser}
-								className="dropdown-icon"
-							/>
-							<span>Manage Profile</span>
-						</div>
-						<div className="dropdown-item logout">
-							<FontAwesomeIcon
-								icon={faSignOutAlt}
-								className="dropdown-icon"
-							/>
-							<span>Logout</span>
-						</div>
-					</div>
-				)}
-			</div>
+			<div
+				className="profile-container"
+				onClick={handleProfileClick}
+			></div>
 		</div>
 	);
 }

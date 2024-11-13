@@ -1,5 +1,5 @@
 const express = require("express");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
 // const jwt = require("jsonwebtoken");
 const { User, Product, Chat, ChatMessage, Order, Cart } = require("./models");
@@ -222,12 +222,83 @@ class UserRoute {
 		this.router.post("/create", asyncHandler(this.createUser));
 		this.router.post("/verify", asyncHandler(this.verifyAccount));
 		this.router.post("/seller", asyncHandler(this.becomeSeller));
+		this.router.post("/get_accounts", asyncHandler(this.getAllAccounts));
 
 		this.router.get("/login", asyncHandler(this.loginUser));
 		this.router.post(
 			"/startStreaming",
 			expressAsyncHandler(this.startStreaming)
 		);
+		this.router.post(
+			"/set_archived",
+			expressAsyncHandler(this.setArchived)
+		);
+	}
+
+	async setArchived(req, res) {
+		try {
+			const { id } = req.body;
+
+			const account = await User.findOne({
+				where: { id },
+			});
+
+			if (!account) {
+				return res.status(404).json({
+					success: false,
+					message: "User not found",
+				});
+			}
+
+			await account.update({ isArchived: !account.isArchived });
+			res.send({
+				success: true,
+				message: "Account archive status updated successfully",
+				data: account,
+			});
+		} catch (error) {
+			console.error(error);
+			res.status(500).json({
+				success: false,
+				message:
+					"An error occurred while updating the account archive status",
+			});
+		}
+	}
+
+	async getAllAccounts(req, res) {
+		try {
+			const { currPage, limit, isArchived } = req.body;
+
+			if (!currPage || !limit) {
+				return res.status(400).json({
+					success: false,
+					message: "Pagination parameters are required",
+				});
+			}
+
+			const offset = (currPage - 1) * limit;
+			const requests = await User.findAndCountAll({
+				where: { isSeller: false, isArchived },
+				limit: limit,
+				offset: offset,
+				order: [["createdAt", "DESC"]],
+			});
+
+			res.json({
+				success: true,
+				data: requests.rows,
+				total: requests.count,
+				currentPage: currPage,
+				totalPages: Math.ceil(requests.count / limit),
+			});
+		} catch (error) {
+			console.error("Error fetching account requests:", error);
+			res.status(500).json({
+				success: false,
+				message: "An error occurred while fetching requests",
+			});
+		}
 	}
 
 	async createUser(req, res) {
@@ -470,6 +541,39 @@ class ProductRoute {
 			asyncHandler(this.deactivateProduct)
 		);
 		this.router.get("/products", asyncHandler(this.getAllProducts));
+		this.router.post(
+			"/getAllProduct",
+			expressAsyncHandler(this.getAllProduct)
+		);
+
+		this.router.post(
+			"/editCreateProduct",
+			expressAsyncHandler(this.editCreateProduct)
+		);
+		this.router.post(
+			"/archiveProduct",
+			expressAsyncHandler(this.archiveProduct)
+		);
+	}
+
+	async getAllProduct(req, res) {
+		try {
+			const { isArchived } = req.body;
+			const allProducts = await Product.findAll({
+				where: { userId: "1", isArchived },
+			});
+			console.log(allProducts);
+			return res.send({
+				success: true,
+				products: allProducts,
+			});
+		} catch (error) {
+			return res.send({
+				success: false,
+				message: "Error creating product",
+				error: error.message,
+			});
+		}
 	}
 
 	async createProduct(req, res) {
@@ -492,6 +596,55 @@ class ProductRoute {
 			return res.send({
 				success: false,
 				message: "Error creating product",
+				error: error.message,
+			});
+		}
+	}
+
+	async editCreateProduct(req, res) {
+		try {
+			const { productData } = req.body;
+			let product;
+			if (productData.id) {
+				product = await Product.findOne({
+					where: { id: productData.id },
+				});
+			}
+
+			if (product) {
+				await product.update({
+					name: productData.name,
+					price: productData.price,
+					number_of_stock: productData.number_of_stock,
+					specification: productData.specification,
+				});
+				return res.send({
+					success: true,
+					message: "Product updated successfully.",
+					product,
+				});
+			} else {
+				product = await Product.create({
+					userId: "1",
+					name: productData.name,
+					price: productData.price,
+					number_of_stock: productData.number_of_stock,
+					specification: productData.specification,
+					category: productData.category,
+					product_image:
+						"https://cdn-icons-png.flaticon.com/512/7387/7387315.png",
+					product_images: [],
+				});
+				return res.send({
+					success: true,
+					message: "Product created successfully.",
+					product,
+				});
+			}
+		} catch (error) {
+			return res.send({
+				success: false,
+				message: "Error editing/creating product",
 				error: error.message,
 			});
 		}
@@ -526,12 +679,37 @@ class ProductRoute {
 		}
 	}
 
-	async getAllProducts(req, res) {
-		const { category, search, email } = req.query;
+	async archiveProduct(req, res) {
+		const { id } = req.body;
 
 		try {
+			const product = await Product.findByPk(id);
+			if (!product) {
+				return res.send({
+					success: false,
+					message: "Product not found",
+				});
+			}
+			await product.update({ isArchived: !product.isArchived });
+			return res.send({
+				success: true,
+				message: "Product archived successfully",
+				product,
+			});
+		} catch (error) {
+			return res.send({
+				success: false,
+				message: "Error archiving product",
+				error: error.message,
+			});
+		}
+	}
+
+	async getAllProducts(req, res) {
+		const { category, search, email } = req.query;
+		try {
 			let query = {
-				where: {},
+				where: { isArchived: false },
 				include: [
 					{
 						model: User,
@@ -602,9 +780,18 @@ class OrderRouter {
 			"/getAllOrderFromUsers",
 			expressAsyncHandler(this.getAllOrderFromUsers)
 		);
+		this.router.post(
+			"/getAllOrderFromUsersTabulator",
+			expressAsyncHandler(this.getAllOrderFromUsersTabulator)
+		);
 		this.router.get(
 			"/getAllOrderById",
 			expressAsyncHandler(this.getAllOrderById)
+		);
+
+		this.router.post(
+			"/getAllOrderRevenue",
+			expressAsyncHandler(this.getAllOrderRevenue)
 		);
 	}
 
@@ -628,12 +815,35 @@ class OrderRouter {
 	async createOrder(req, res) {
 		try {
 			const { productId, numberOfProduct, userId, sellerId } = req.body;
+			const product = await Product.findOne({
+				where: { id: productId },
+				attributes: ["id", "name", "number_of_stock", "price"],
+			});
+
+			if (!product) {
+				return res.status(404).send({
+					success: false,
+					message: "Product not found",
+				});
+			}
+
+			if (product.stock < numberOfProduct) {
+				return res.status(400).send({
+					success: false,
+					message: `Insufficient stock. Only ${product.stock} items left.`,
+				});
+			}
+
 			const newOrder = await Order.create({
 				productId,
 				numberOfProduct,
 				userId,
 				sellerId,
 				toPay: true,
+			});
+
+			await product.update({
+				stock: product.stock - numberOfProduct,
 			});
 			res.send({ success: true, newOrder });
 		} catch (error) {
@@ -674,12 +884,14 @@ class OrderRouter {
 			} else if (toShip !== undefined) {
 				whereClause["toShip"] = toShip;
 				whereClause["toRecieve"] = false;
+				whereClause["isComplete"] = false;
 			} else if (toReceive !== undefined) {
 				whereClause["toRecieve"] = toReceive;
 				whereClause["isComplete"] = false;
 			} else if (isComplete !== undefined)
 				whereClause["isComplete"] = isComplete;
 
+			console.log(whereClause);
 			const order = await Order.findAll({
 				where: whereClause,
 				include: [
@@ -708,8 +920,20 @@ class OrderRouter {
 			const { id } = req.body;
 
 			const order = await Order.findByPk(id);
-			await order.update({ toShip: true });
-			res.send({ success: true });
+			if (order.toShip) {
+				await order.update({ isComplete: true });
+				res.send({
+					message:
+						"Succesfully completed the shipment of the product!",
+					success: true,
+				});
+			} else {
+				await order.update({ toShip: true });
+				res.send({
+					message: "Succesfully ship the product!",
+					success: true,
+				});
+			}
 		} catch (error) {
 			res.send({ success: false, message: error.message });
 		}
@@ -722,6 +946,174 @@ class OrderRouter {
 			const order = await Order.findByPk(id);
 			await order.destroy();
 			res.send({ success: true });
+		} catch (error) {
+			res.send({ success: false, message: error.message });
+		}
+	}
+
+	async getAllOrderFromUsersTabulator(req, res) {
+		try {
+			const { sellerId } = req.query;
+			const { currPage, limit, isComplete } = req.body;
+
+			let checkIsComplete = isComplete ? true : false;
+
+			if (!currPage || !limit) {
+				return res.status(400).json({
+					success: false,
+					message: "Pagination parameters are required",
+				});
+			}
+			const offset = (currPage - 1) * limit;
+			const requests = await Order.findAndCountAll({
+				where: {
+					sellerId,
+					isComplete: checkIsComplete,
+				},
+				include: [
+					{
+						model: Product,
+						as: "Product",
+						attributes: { exclude: [] },
+					},
+					{
+						model: User,
+						as: "Customer",
+						attributes: { exclude: [] },
+					},
+				],
+				limit: limit,
+				offset: offset,
+				order: [["createdAt", "DESC"]],
+			});
+
+			res.send({
+				success: true,
+				data: requests.rows,
+				total: requests.count,
+				currentPage: currPage,
+				totalPages: Math.ceil(requests.count / limit),
+			});
+		} catch (error) {
+			res.send({ success: false, message: error.message });
+		}
+	}
+
+	async getAllUserCount(req, res) {
+		try {
+			const userCount = await User.count();
+
+			res.send({
+				success: true,
+				totalUsers: userCount,
+			});
+		} catch (error) {
+			res.send({ success: false, message: error.message });
+		}
+	}
+
+	async getTotalProductCount(req, res) {
+		try {
+			const productCount = await Product.count();
+
+			res.send({
+				success: true,
+				totalProducts: productCount,
+			});
+		} catch (error) {
+			res.send({ success: false, message: error.message });
+		}
+	}
+
+	async getAllOrderRevenue(req, res) {
+		try {
+			const allOrders = await Order.findAll({
+				where: {
+					sellerId: "1",
+					isComplete: true,
+				},
+				include: [
+					{
+						model: Product,
+						as: "Product",
+						attributes: ["id", "name", "price"],
+					},
+				],
+			});
+
+			let totalRevenue = 0;
+			let totalOrders = allOrders.length;
+			const productCountMap = {};
+			const monthlySalesMap = {};
+
+			const currentDate = new Date();
+			for (let i = 0; i < 6; i++) {
+				const date = new Date(
+					currentDate.getFullYear(),
+					currentDate.getMonth() - i,
+					1
+				);
+				const month = `${date.getFullYear()}-${(date.getMonth() + 1)
+					.toString()
+					.padStart(2, "0")}`;
+				monthlySalesMap[month] = { totalSales: 0, revenue: 0 };
+			}
+
+			allOrders.forEach((order) => {
+				const product = order.Product;
+				if (!product) return;
+
+				const productPrice = parseFloat(product.price || 0);
+				const orderQuantity = order.quantity || 1;
+				const orderRevenue = productPrice * orderQuantity;
+				totalRevenue += orderRevenue;
+
+				if (productCountMap[product.id]) {
+					productCountMap[product.id].count += 1;
+				} else {
+					productCountMap[product.id] = {
+						name: product.name,
+						count: 1,
+					};
+				}
+
+				const orderDate = new Date(order.createdAt);
+				const orderMonth = `${orderDate.getFullYear()}-${(
+					orderDate.getMonth() + 1
+				)
+					.toString()
+					.padStart(2, "0")}`;
+
+				if (monthlySalesMap[orderMonth]) {
+					monthlySalesMap[orderMonth].totalSales += orderQuantity;
+					monthlySalesMap[orderMonth].revenue += orderRevenue;
+				}
+			});
+
+			const topProducts = Object.values(productCountMap)
+				.sort((a, b) => b.count - a.count)
+				.slice(0, 5);
+
+			const userCount = await User.count();
+			const productCount = await Product.count();
+
+			const salesOverTime = Object.keys(monthlySalesMap)
+				.sort()
+				.map((month) => ({
+					month,
+					totalSales: monthlySalesMap[month].totalSales,
+					revenue: monthlySalesMap[month].revenue.toFixed(2),
+				}));
+
+			res.send({
+				success: true,
+				totalRevenue: totalRevenue.toFixed(2),
+				totalOrders,
+				topProducts,
+				userCount,
+				productCount,
+				salesOverTime,
+			});
 		} catch (error) {
 			res.send({ success: false, message: error.message });
 		}

@@ -79,9 +79,15 @@ export default function Tabulator({
 																			"5px",
 																	}}
 																>
-																	{
-																		action.label
-																	}
+																	{action.onConditionLabel ===
+																		null ||
+																	action.onConditionLabel ===
+																		undefined ||
+																	action.onConditionLabel(
+																		item
+																	)
+																		? action.label
+																		: action.label2}
 																</div>
 															)}
 														</button>
