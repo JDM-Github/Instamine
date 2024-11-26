@@ -3,7 +3,7 @@ import axios from "axios";
 
 class RequestHandler {
 	static async handleRequest(method, link, requestData = {}) {
-		const development = false;
+		const development = true;
 		const baseURL = development
 			? "http://localhost:8888"
 			: "https://instantmine.netlify.app";

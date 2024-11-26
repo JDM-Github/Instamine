@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const serverless = require("serverless-http");
 const path = require("path");
+const axios = require("axios");
 const bodyParser = require("body-parser");
 
 const app = express();
@@ -15,8 +16,9 @@ const {
 	orderRouter,
 	cartRouter,
 } = require("./routers");
+const { youtubeRouter } = require("./stream.js");
 
-DEVELOPMENT = false;
+DEVELOPMENT = true;
 if (DEVELOPMENT) {
 	app.use(
 		cors({
@@ -37,6 +39,7 @@ router.use("/chats", chatRouter);
 router.use("/product", productRouter);
 router.use("/orders", orderRouter);
 router.use("/cart", cartRouter);
+router.use("/youtube", youtubeRouter);
 
 router.get("/reset", async (req, res) => {
 	await sequelize.sync({ force: true });
@@ -84,6 +87,42 @@ router.post("/send-email", (req, res) => {
 			info: info.messageId,
 		});
 	});
+});
+
+const PAYMONGO_API_KEY = "sk_test_PoK58FtMrQaHHc2EyguAKYwj";
+router.post("/create-payment", async (req, res) => {
+	const { amount, description } = req.body;
+	try {
+		const sourceResponse = await axios.post(
+			"https://api.paymongo.com/v1/sources",
+			{
+				data: {
+					attributes: {
+						amount: amount * 100,
+						currency: "PHP",
+						type: "gcash",
+						redirect: {
+							success: "https://yourdomain.com/payment-success",
+							failed: "https://yourdomain.com/payment-failed",
+						},
+					},
+				},
+			},
+			{
+				headers: {
+					Authorization: `Basic ${Buffer.from(
+						PAYMONGO_API_KEY
+					).toString("base64")}`,
+					"Content-Type": "application/json",
+				},
+			}
+		);
+		const gcashSource = sourceResponse.data.data;
+		res.json({ redirectUrl: gcashSource.attributes.redirect.checkout_url });
+	} catch (error) {
+		console.error("Error creating payment:", error);
+		res.status(500).json({ error: "Failed to create GCash payment" });
+	}
 });
 
 app.use(bodyParser.json());

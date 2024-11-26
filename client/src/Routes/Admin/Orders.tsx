@@ -5,6 +5,7 @@ import {
 	faCheck,
 	faDeleteLeft,
 	faEye,
+	faMessage,
 } from "@fortawesome/free-solid-svg-icons";
 import RequestHandler from "../../Functions/RequestHandler.js";
 import { toast, ToastContainer } from "react-toastify";
@@ -13,22 +14,25 @@ import OrderDetailsModal from "../../Component/OrderDetails.tsx";
 
 const headers = [
 	"Order ID",
-	"Product Name",
-	"Quantity",
+	"Customer ID",
+	"Is Paid",
+	"Subtotal",
+	"Discount",
+	"Shipping Fee",
 	"Total",
-	"Full Name",
-	"Email",
+	"Created At",
 	"Actions",
 ];
 
 const renderRow = (item) => (
 	<>
 		<td>{item.id}</td>
-		<td>{item.Product.name}</td>
-		<td>{item.numberOfProduct}</td>
-		<td>{item.numberOfProduct * item.Product.price}</td>
-		<td>{item.Customer.firstName + " " + item.Customer.lastName}</td>
-		<td>{item.Customer.email}</td>
+		<td>{item.userId}</td>
+		<td>{item.orderPaid ? "YES" : "NO"}</td>
+		<td>{item.subTotalFee}</td>
+		<td>{item.discountFee}</td>
+		<td>{item.shoppingFee}</td>
+		<td>{item.totalFee}</td>
 		<td>{item.createdAt.split("T")[0]}</td>
 	</>
 );
@@ -57,26 +61,28 @@ const Orders = () => {
 		{
 			icon: faCheck,
 			className: "done-btn",
-			label2: "SHIP",
-			label: "COMPLETE",
-			onConditionLabel: (item) => item.toShip,
+			label: "SET DELIEVERED",
 			onClick: (id) => shipOrder(id),
 		},
 		{
 			icon: faDeleteLeft,
 			className: "delete-btn",
-			label2: "DELETE",
-			label: "CANCEL",
+			label: "DECLINE",
+			onConditionLabel: (item) => item.toShip,
+		},
+		{
+			icon: faMessage,
+			className: "delete-btn",
+			label: "MESSAGE",
 			onConditionLabel: (item) => item.toShip,
 		},
 	];
 
 	const shipOrder = async (id) => {
-		alert(JSON.stringify(id));
 		try {
 			const data = await RequestHandler.handleRequest(
 				"post",
-				"orders/shipOrder",
+				"orders/delieverOrder",
 				{ id }
 			);
 			if (data.success === false) {
@@ -85,7 +91,7 @@ const Orders = () => {
 						"Error shipping the program. Please check your credentials."
 				);
 			} else {
-				toast.success(data.message || "Product shipped successfully!");
+				toast.success(data.message || "Order delievered successfully!");
 				loadRequestData();
 			}
 		} catch (error) {
@@ -97,8 +103,14 @@ const Orders = () => {
 		try {
 			const data = await RequestHandler.handleRequest(
 				"post",
-				"orders/getAllOrderFromUsersTabulator?sellerId=1",
-				{ currPage, limit }
+				"orders/get-batch-orders-tabulator",
+				{
+					toShip: true,
+					toReceive: false,
+					isComplete: false,
+					currPage,
+					limit,
+				}
 			);
 			if (data.success === false) {
 				toast.error(

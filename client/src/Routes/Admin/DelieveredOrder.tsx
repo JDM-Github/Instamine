@@ -15,6 +15,7 @@ import OrderDetailsModal from "../../Component/OrderDetails.tsx";
 const headers = [
 	"Order ID",
 	"Customer ID",
+	"Is Paid",
 	"Subtotal",
 	"Discount",
 	"Shipping Fee",
@@ -27,6 +28,7 @@ const renderRow = (item) => (
 	<>
 		<td>{item.id}</td>
 		<td>{item.userId}</td>
+		<td>{item.orderPaid ? "YES" : "NO"}</td>
 		<td>{item.subTotalFee}</td>
 		<td>{item.discountFee}</td>
 		<td>{item.shoppingFee}</td>
@@ -35,7 +37,7 @@ const renderRow = (item) => (
 	</>
 );
 
-const CompletedOrders = () => {
+const DelieveredOrders = () => {
 	const [requestData, setRequestData] = useState([]);
 	const [currPage, setCurrPage] = useState(1);
 	const [total, setTotal] = useState(0);
@@ -56,6 +58,11 @@ const CompletedOrders = () => {
 			label: "VIEW",
 			onClick: (id, item) => openModal(item),
 		},
+		{
+			icon: faMessage,
+			className: "done-btn",
+			label: "MESSAGE",
+		},
 	];
 
 	const loadRequestData = async () => {
@@ -65,8 +72,8 @@ const CompletedOrders = () => {
 				"orders/get-batch-orders-tabulator",
 				{
 					toShip: false,
-					toReceive: false,
-					isComplete: true,
+					toReceive: true,
+					isComplete: false,
 					currPage,
 					limit,
 				}
@@ -77,6 +84,8 @@ const CompletedOrders = () => {
 						"Error occurred. Please check your credentials."
 				);
 			} else {
+				// alert(JSON.stringify(data.data));
+				// console.log(JSON.stringify(data.data));
 				setRequestData(data.data);
 				setTotal(data.total);
 			}
@@ -113,4 +122,4 @@ const CompletedOrders = () => {
 	);
 };
 
-export default CompletedOrders;
+export default DelieveredOrders;

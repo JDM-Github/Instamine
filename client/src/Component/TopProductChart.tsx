@@ -10,7 +10,6 @@ import {
 	Legend,
 } from "chart.js";
 
-// Register the components
 ChartJS.register(
 	CategoryScale,
 	LinearScale,

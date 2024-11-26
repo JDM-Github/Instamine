@@ -32,6 +32,23 @@ export default function Navigation() {
 
 			<div
 				className={`nav-items ${
+					location.pathname === "/stream" ? "active" : ""
+				}`}
+				data-label="START LIVE"
+			>
+				<Link to="/stream">
+					<FontAwesomeIcon
+						icon={faCheckSquare}
+						className="nav-icon"
+					/>
+					<div>START LIVE</div>
+				</Link>
+			</div>
+
+			<hr />
+
+			<div
+				className={`nav-items ${
 					location.pathname === "/users" ? "active" : ""
 				}`}
 				data-label="USERS"
@@ -59,6 +76,21 @@ export default function Navigation() {
 
 			<div
 				className={`nav-items ${
+					location.pathname === "/delievered-orders" ? "active" : ""
+				}`}
+				data-label="DELIEVERED ORDERS"
+			>
+				<Link to="/delievered-orders">
+					<FontAwesomeIcon
+						icon={faShoppingCart}
+						className="nav-icon"
+					/>
+					<div>DELIEVERED ORDERS</div>
+				</Link>
+			</div>
+
+			<div
+				className={`nav-items ${
 					location.pathname === "/complete-orders" ? "active" : ""
 				}`}
 				data-label="COMPLETED ORDERS"
@@ -81,18 +113,6 @@ export default function Navigation() {
 				<Link to="/product-list">
 					<FontAwesomeIcon icon={faBoxOpen} className="nav-icon" />
 					<div>PRODUCTS</div>
-				</Link>
-			</div>
-
-			<div
-				className={`nav-items ${
-					location.pathname === "/logout" ? "active" : ""
-				}`}
-				data-label="LOGOUT"
-			>
-				<Link to="/logout">
-					<FontAwesomeIcon icon={faSignOutAlt} className="nav-icon" />
-					<div>LOGOUT</div>
 				</Link>
 			</div>
 		</div>

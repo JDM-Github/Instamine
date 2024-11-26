@@ -2,7 +2,7 @@
 	display: flex;
 	flex-direction: column;
 	position: relative;
-	width: 100%;
+	max-width: 100%;
 	max-height: 100%;
 	height: auto;
 	border-radius: 10px;
@@ -93,7 +93,7 @@
 
 	th {
 		background-color: white;
-		color: #ff3366;	
+		color: #ff3366;
 		position: sticky;
 		top: 0;
 		z-index: 0;

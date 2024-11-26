@@ -1,17 +1,8 @@
 import React from "react";
-import "./OrderDetails.scss";
+import "./UserDetails.scss";
 
 const UserDetailsModal = ({ isOpen, onClose, order }) => {
 	if (!isOpen || !order) return null;
-
-	// const {
-	// 	id,
-	//     fullName: (order.firstName + " " + order.lastName),
-	// 	Product: { name: productName, price: productPrice },
-	// 	numberOfProduct,
-	// 	Customer: { firstName, lastName, email },
-	// 	createdAt,
-	// } = order;
 
 	const id = order.id;
 	const fullName = order.firstName + " " + order.lastName;
@@ -20,10 +11,10 @@ const UserDetailsModal = ({ isOpen, onClose, order }) => {
 	const location = order.location;
 
 	return (
-		<div className="order-details-modal">
-			<div className="modal-content">
+		<div className="user-details-overlay">
+			<div className="user-modal-content">
 				<div className="modal-header">
-					<h2>User Details</h2>
+					<h3>User Details</h3>
 					<button className="close-btn" onClick={onClose}>
 						&times;
 					</button>
@@ -52,24 +43,6 @@ const UserDetailsModal = ({ isOpen, onClose, order }) => {
 							<span>{location}</span>
 						</div>
 					</div>
-
-					{/* <hr /> */}
-
-					{/* <div className="customer-info">
-						<h3>Customer Details</h3>
-						<div className="info-group">
-							<label>Name:</label>
-							<span>{`${firstName} ${lastName}`}</span>
-						</div>
-						<div className="info-group">
-							<label>Email:</label>
-							<span>{email}</span>
-						</div>
-						<div className="info-group">
-							<label>Order Date:</label>
-							<span>{createdAt.split("T")[0]}</span>
-						</div>
-					</div> */}
 				</div>
 
 				<div className="modal-footer">

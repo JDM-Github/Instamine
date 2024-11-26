@@ -15,6 +15,58 @@ const sequelize = new Sequelize(
 	}
 );
 
+const YoutubeMetadata = sequelize.define("YoutubeMetadata", {
+	video_id: {
+		type: DataTypes.STRING,
+		unique: true,
+	},
+	metadata: {
+		type: DataTypes.JSONB,
+	},
+	last_updated: {
+		type: DataTypes.DATE,
+		defaultValue: Sequelize.NOW,
+	},
+});
+
+const ChatSend = sequelize.define("ChatSend", {
+	user: {
+		type: Sequelize.STRING,
+		allowNull: false,
+	},
+	userProfile: {
+		type: Sequelize.STRING,
+		allowNull: false,
+	},
+	message: {
+		type: Sequelize.TEXT,
+		allowNull: false,
+	},
+	timestamp: {
+		type: Sequelize.DATE,
+		defaultValue: Sequelize.NOW,
+	},
+});
+
+const ChatReceive = sequelize.define("ChatReceive", {
+	user: {
+		type: Sequelize.STRING,
+		allowNull: false,
+	},
+	userProfile: {
+		type: Sequelize.STRING,
+		allowNull: false,
+	},
+	message: {
+		type: Sequelize.TEXT,
+		allowNull: false,
+	},
+	timestamp: {
+		type: Sequelize.DATE,
+		defaultValue: Sequelize.NOW,
+	},
+});
+
 const User = sequelize.define(
 	"User",
 	{
@@ -254,10 +306,14 @@ const Order = sequelize.define(
 			type: DataTypes.INTEGER,
 			defaultValue: 1,
 		},
-
-		// This is all track, example
-		// Your delievery is in blah blah
-		// Your delievery is tranported in manila
+		orderPaid: {
+			type: DataTypes.BOOLEAN,
+			defaultValue: false,
+		},
+		price: {
+			type: DataTypes.DECIMAL,
+			defaultValue: 0.0,
+		},
 		allTrack: {
 			type: DataTypes.ARRAY(DataTypes.STRING),
 			defaultValue: [],
@@ -283,6 +339,70 @@ const Order = sequelize.define(
 		timestamps: true,
 	}
 );
+
+const OrderBatch = sequelize.define(
+	"OrderBatch",
+	{
+		products: {
+			type: DataTypes.JSON,
+		},
+		userId: {
+			type: DataTypes.INTEGER,
+			allowNull: false,
+			references: {
+				model: "Users",
+				key: "id",
+			},
+			onDelete: "CASCADE",
+		},
+		orderPaid: {
+			type: DataTypes.BOOLEAN,
+			defaultValue: false,
+		},
+		subTotalFee: {
+			type: DataTypes.DECIMAL,
+			defaultValue: 0.0,
+		},
+		discountFee: {
+			type: DataTypes.DECIMAL,
+			defaultValue: 0.0,
+		},
+		shoppingFee: {
+			type: DataTypes.DECIMAL,
+			defaultValue: 0.0,
+		},
+		totalFee: {
+			type: DataTypes.DECIMAL,
+			defaultValue: 0.0,
+		},
+		allTrack: {
+			type: DataTypes.ARRAY(DataTypes.STRING),
+			defaultValue: [],
+		},
+		toPay: {
+			type: DataTypes.BOOLEAN,
+			defaultValue: false,
+		},
+		toShip: {
+			type: DataTypes.BOOLEAN,
+			defaultValue: false,
+		},
+		toRecieve: {
+			type: DataTypes.BOOLEAN,
+			defaultValue: false,
+		},
+		isComplete: {
+			type: DataTypes.BOOLEAN,
+			defaultValue: false,
+		},
+	},
+	{
+		timestamps: true,
+	}
+);
+
+User.hasMany(OrderBatch, { foreignKey: "userId" });
+OrderBatch.belongsTo(User, { foreignKey: "userId" });
 
 const Cart = sequelize.define(
 	"Cart",
@@ -318,14 +438,6 @@ const Cart = sequelize.define(
 const Rate = sequelize.define(
 	"Rate",
 	{
-		rating: {
-			type: DataTypes.FLOAT,
-			allowNull: false,
-			validate: {
-				min: 0,
-				max: 5,
-			},
-		},
 		productId: {
 			type: DataTypes.INTEGER,
 			allowNull: true,
@@ -334,6 +446,18 @@ const Rate = sequelize.define(
 				key: "id",
 			},
 			onDelete: "CASCADE",
+		},
+		rating: {
+			type: DataTypes.FLOAT,
+			allowNull: false,
+			validate: {
+				min: 0,
+				max: 5,
+			},
+		},
+		review: {
+			type: DataTypes.STRING,
+			defaultValue: "",
 		},
 		userId: {
 			type: DataTypes.INTEGER,
@@ -349,6 +473,34 @@ const Rate = sequelize.define(
 		timestamps: true,
 	}
 );
+
+const Notification = sequelize.define("Notification", {
+	userId: {
+		type: DataTypes.INTEGER,
+		allowNull: false,
+		references: {
+			model: "Users",
+			key: "id",
+		},
+		onDelete: "CASCADE",
+	},
+	title: {
+		type: DataTypes.STRING,
+	},
+	description: {
+		type: DataTypes.STRING,
+	},
+	isRead: {
+		type: DataTypes.BOOLEAN,
+		defaultValue: false,
+	},
+});
+
+User.hasMany(Notification, { foreignKey: "userId" });
+Notification.belongsTo(User, { foreignKey: "userId" });
+
+User.hasMany(Rate, { foreignKey: "userId" });
+Rate.belongsTo(User, { foreignKey: "userId" });
 
 User.hasMany(Product, {
 	foreignKey: "userId",
@@ -372,12 +524,10 @@ User.hasMany(Order, {
 	as: "SellerOrders",
 	onDelete: "CASCADE",
 });
-
 Order.belongsTo(User, {
 	foreignKey: "userId",
 	as: "Customer",
 });
-
 Order.belongsTo(User, {
 	foreignKey: "sellerId",
 	as: "Seller",
@@ -423,4 +573,9 @@ module.exports = {
 	Chat,
 	Order,
 	Cart,
+	YoutubeMetadata,
+	ChatSend,
+	ChatReceive,
+	Notification,
+	OrderBatch,
 };

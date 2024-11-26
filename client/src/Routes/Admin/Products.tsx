@@ -17,45 +17,25 @@ type Product = {
 	category: string;
 };
 
-// const productsData: Product[] = [
-// 	{
-// 		id: 1,
-// 		name: "Modern Chair",
-// 		userId: 1,
-// 		product_image: null,
-// 		product_images: ["https://via.placeholder.com/200"],
-// 		price: 99.99,
-// 		number_of_stock: 10,
-// 		number_of_sold: 2,
-// 		specification: "Comfortable and stylish chair for your living room.",
-// 		active: true,
-// 		category: "Furniture",
-// 	},
-// 	{
-// 		id: 2,
-// 		name: "Gaming Mouse",
-// 		userId: 2,
-// 		product_image: null,
-// 		product_images: ["https://via.placeholder.com/200"],
-// 		price: 49.99,
-// 		number_of_stock: 50,
-// 		number_of_sold: 20,
-// 		specification:
-// 			"High precision wireless gaming mouse with RGB lighting.",
-// 		active: true,
-// 		category: "Electronics",
-// 	},
-// ];
+type AddData = {
+	name: string;
+	price: number;
+	number_of_stock: number;
+	specification: string;
+	category: string;
+};
 
 const ProductList: React.FC = () => {
+	const [loading, setloading] = useState(false);
 	const [isArchived, setIsArchived] = useState(false);
 	const [productsData, setProductsData] = useState<Product[]>([]);
+	const [allReview, setReview] = useState(null);
 
 	const loadRequestData = async () => {
 		try {
 			const data = await RequestHandler.handleRequest(
 				"post",
-				"orders/getAllProduct",
+				"product/getAllProduct",
 				{ isArchived }
 			);
 			if (data.success === false) {
@@ -84,7 +64,7 @@ const ProductList: React.FC = () => {
 	);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editData, setEditData] = useState<Product | null>(null);
-	const [addData, setAddData] = useState({});
+	const [addData, setAddData] = useState<AddData | null>(null);
 	const [mainImagePreview, setMainImagePreview] = useState<string | null>(
 		null
 	);
@@ -132,7 +112,26 @@ const ProductList: React.FC = () => {
 		setAdditionalImagesPreview(updatedImages);
 	};
 
-	const handleProductClick = (product: Product) => {
+	const handleProductClick = async (product: Product) => {
+		setloading(true);
+		try {
+			const data = await RequestHandler.handleRequest(
+				"post",
+				"product/getAllReview",
+				{ productId: product.id }
+			);
+			if (data.success === false) {
+				toast.error(
+					data.message ||
+						"Error occurred. Please check your credentials."
+				);
+			} else {
+				setReview(data.allRate);
+			}
+		} catch (error) {
+			toast.error(`An error occurred while requesting data. ${error}`);
+		}
+
 		setSelectedProduct(product);
 		setAddData(null);
 		setEditData(product);
@@ -144,6 +143,7 @@ const ProductList: React.FC = () => {
 		if (product.product_images && product.product_images.length > 0)
 			setAdditionalImagesPreview(product.product_images.slice(0, 5));
 		setIsModalOpen(true);
+		setloading(false);
 	};
 
 	const handleAddProductClick = () => {
@@ -172,12 +172,13 @@ const ProductList: React.FC = () => {
 	) => {
 		if (editData) {
 			setEditData({ ...editData, [e.target.name]: e.target.value });
-		} else {
+		} else if (addData) {
 			setAddData({ ...addData, [e.target.name]: e.target.value });
 		}
 	};
 
 	const saveProduct = async (productData) => {
+		setloading(true);
 		try {
 			const data = await RequestHandler.handleRequest(
 				"post",
@@ -198,6 +199,7 @@ const ProductList: React.FC = () => {
 		} catch (error) {
 			toast.error(`An error occurred while saving data. ${error}`);
 		}
+		setloading(false);
 	};
 
 	const handleSaveChanges = () => {
@@ -236,8 +238,35 @@ const ProductList: React.FC = () => {
 		handleCloseModal();
 	};
 
+	const calculateAverageRating = (allReview) => {
+		if (!allReview || allReview.length === 0) return 0;
+		const totalRating = allReview.reduce(
+			(sum, review) => sum + review.rating,
+			0
+		);
+		return (totalRating / allReview.length).toFixed(1); // Average rating rounded to 1 decimal
+	};
+
+	const renderStars = (rating) => {
+		const filledStars = Math.floor(rating);
+		const halfStar = rating - filledStars >= 0.5;
+		const emptyStars = 5 - filledStars - (halfStar ? 1 : 0);
+
+		return (
+			<span>
+				{"★".repeat(filledStars)}
+				{halfStar && "☆"}
+				{"☆".repeat(emptyStars)}
+			</span>
+		);
+	};
+	const averageRating = calculateAverageRating(allReview);
+
 	return (
 		<>
+			{loading && (
+				<div style={{ backgroundColor: "black", zIndex: 9999 }}> </div>
+			)}
 			<button className="status-button" onClick={handleArchiveChange}>
 				{isArchived ? "ARCHIVED" : "ACTIVE"}
 			</button>
@@ -415,6 +444,66 @@ const ProductList: React.FC = () => {
 											</div>
 										)
 									)}
+								</div>
+							</div>
+						</div>
+
+						<div className="modal-images">
+							<div className="modal-form">
+								<label
+									style={{
+										fontSize: "18px",
+										fontWeight: "bold",
+										color: "#333",
+									}}
+								>
+									All Reviews
+								</label>
+								<div
+									className="average-rating"
+									style={{
+										marginBottom: "10px",
+										fontSize: "16px",
+									}}
+								>
+									<strong>Overall Rating:</strong>{" "}
+									{averageRating}{" "}
+									<span
+										style={{
+											color: "#f4b400",
+											fontSize: "18px",
+										}}
+									>
+										{renderStars(averageRating)}
+									</span>
+								</div>
+								<div className="review-list">
+									{allReview &&
+										allReview.map((review, index) => (
+											<div
+												key={review.id}
+												className="review-item"
+											>
+												<p>
+													<strong>Rating:</strong>{" "}
+													{review.rating}
+												</p>
+												<p>
+													<strong>Review:</strong>{" "}
+													{review.review}
+												</p>
+												<p>
+													<strong>User ID:</strong>{" "}
+													{review.userId}
+												</p>
+												<p>
+													<strong>Created At:</strong>{" "}
+													{new Date(
+														review.createdAt
+													).toLocaleString()}
+												</p>
+											</div>
+										))}
 								</div>
 							</div>
 						</div>

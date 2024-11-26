@@ -2,10 +2,19 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 
 // const jwt = require("jsonwebtoken");
-const { User, Product, Chat, ChatMessage, Order, Cart } = require("./models");
+const {
+	User,
+	Product,
+	Chat,
+	OrderBatch,
+	ChatMessage,
+	Order,
+	Cart,
+	Rate,
+	Notification,
+} = require("./models");
 const { isSeller } = require("./middleware");
 
-const router = express.Router();
 const asyncHandler = require("express-async-handler");
 const { Op } = require("sequelize");
 const expressAsyncHandler = require("express-async-handler");
@@ -55,7 +64,7 @@ async function addChatPartner(userId, partnerId) {
 
 class ChatRouter {
 	constructor() {
-		this.router = router;
+		this.router = express.Router();
 		this.initRoutes();
 	}
 
@@ -121,11 +130,13 @@ class ChatRouter {
 							profileImage: partner.profileImage,
 							chatMessageId,
 							lastMessage,
+							createdAt: chatMessage.createdAt,
 						};
 					}
 					return null;
 				})
 			);
+			console.log(chats);
 
 			res.send({
 				success: true,
@@ -213,7 +224,7 @@ class ChatRouter {
 }
 class UserRoute {
 	constructor() {
-		this.router = router;
+		this.router = express.Router();
 		this.initRoutes();
 	}
 
@@ -225,6 +236,7 @@ class UserRoute {
 		this.router.post("/get_accounts", asyncHandler(this.getAllAccounts));
 
 		this.router.get("/login", asyncHandler(this.loginUser));
+		this.router.post("/login", asyncHandler(this.loginUser));
 		this.router.post(
 			"/startStreaming",
 			expressAsyncHandler(this.startStreaming)
@@ -233,6 +245,37 @@ class UserRoute {
 			"/set_archived",
 			expressAsyncHandler(this.setArchived)
 		);
+		this.router.post(
+			"/getAllNotification",
+			expressAsyncHandler(this.getAllNotification)
+		);
+	}
+
+	async getAllNotification(req, res) {
+		try {
+			const { id } = req.body;
+
+			const notification = await Notification.findAll({
+				where: { userId: id },
+			});
+
+			if (!notification) {
+				return res.status(404).json({
+					success: false,
+					message: "User not found",
+				});
+			}
+			res.send({
+				success: true,
+				notification: notification,
+			});
+		} catch (error) {
+			console.error(error);
+			res.status(500).json({
+				success: false,
+				message: "An error occurred while fetching notification",
+			});
+		}
 	}
 
 	async setArchived(req, res) {
@@ -528,13 +571,14 @@ class UserRoute {
 
 class ProductRoute {
 	constructor() {
-		this.router = router;
+		this.router = express.Router();
 		this.initRoutes();
 	}
 
 	initRoutes() {
 		this.router.get("/", asyncHandler(this.test));
 		this.router.post("/create", isSeller, asyncHandler(this.createProduct));
+		this.router.post("/rateProduct", expressAsyncHandler(this.rateProduct));
 		this.router.post(
 			"/deactive:id",
 			isSeller,
@@ -553,6 +597,10 @@ class ProductRoute {
 		this.router.post(
 			"/archiveProduct",
 			expressAsyncHandler(this.archiveProduct)
+		);
+		this.router.post(
+			"/getAllReview",
+			expressAsyncHandler(this.getAllReview)
 		);
 	}
 
@@ -707,6 +755,7 @@ class ProductRoute {
 
 	async getAllProducts(req, res) {
 		const { category, search, email } = req.query;
+
 		try {
 			let query = {
 				where: { isArchived: false },
@@ -755,6 +804,8 @@ class ProductRoute {
 				products,
 			});
 		} catch (error) {
+			console.log(error);
+
 			return res.send({
 				success: false,
 				message: "Product fetched unsuccessfully",
@@ -762,11 +813,57 @@ class ProductRoute {
 			});
 		}
 	}
+
+	async rateProduct(req, res) {
+		try {
+			const { userId, order, index, rating, review } = req.body;
+			console.log(order);
+			const orderBatch = await OrderBatch.findByPk(order.orderId);
+			if (!orderBatch)
+				res.send({ success: false, message: "Order has not found." });
+
+			const certainProduct = order.products[index];
+			const newRate = await Rate.create({
+				userId,
+				productId: certainProduct.productId,
+				rating,
+				review,
+			});
+			certainProduct["isRated"] = true;
+			certainProduct["rating"] = rating;
+			certainProduct["note"] = review;
+			const products = order.products;
+			products[index] = certainProduct;
+			await orderBatch.update({ products: products });
+			res.send({ success: true, newRate });
+		} catch (error) {
+			res.send({ success: false, message: error.message });
+		}
+	}
+
+	async getAllReview(req, res) {
+		try {
+			const { productId } = req.body;
+			const allRate = await Rate.findAll({
+				where: { productId },
+				include: [
+					{
+						model: User,
+						attributes: { exclude: [] },
+					},
+				],
+			});
+			console.log(allRate);
+			res.send({ success: true, allRate });
+		} catch (error) {
+			res.send({ success: false, message: error.message });
+		}
+	}
 }
 
 class OrderRouter {
 	constructor() {
-		this.router = router;
+		this.router = express.Router();
 		this.initRoutes();
 	}
 
@@ -776,6 +873,10 @@ class OrderRouter {
 		this.router.post("/bulkOrder", expressAsyncHandler(this.bulkOrder));
 		this.router.post("/cancelOrder", expressAsyncHandler(this.cancelOrder));
 		this.router.post("/shipOrder", expressAsyncHandler(this.shipOrder));
+		this.router.post(
+			"/delieverOrder",
+			expressAsyncHandler(this.delieverOrder)
+		);
 		this.router.get(
 			"/getAllOrderFromUsers",
 			expressAsyncHandler(this.getAllOrderFromUsers)
@@ -793,6 +894,29 @@ class OrderRouter {
 			"/getAllOrderRevenue",
 			expressAsyncHandler(this.getAllOrderRevenue)
 		);
+		this.router.post(
+			"/get-batch-orders",
+			expressAsyncHandler(this.getAllBatchOrder)
+		);
+		this.router.post(
+			"/get-batch-orders-tabulator",
+			expressAsyncHandler(this.getAllBatchOrderTabulator)
+		);
+		this.router.post(
+			"/complete-order",
+			expressAsyncHandler(this.completeOrder)
+		);
+	}
+
+	async completeOrder(req, res) {
+		try {
+			const { id } = req.body;
+			const order = await OrderBatch.findByPk(id);
+			await order.update({ toRecieve: false, isComplete: true });
+			res.send({ success: true, order });
+		} catch (error) {
+			res.send({ success: false, message: error.message });
+		}
 	}
 
 	async getAllOrders(req, res) {
@@ -806,7 +930,7 @@ class OrderRouter {
 					},
 				],
 			});
-			res.send({ sucess: true, newOrder });
+			res.send({ success: true, newOrder });
 		} catch (error) {
 			res.send({ success: false, message: error.message });
 		}
@@ -853,24 +977,121 @@ class OrderRouter {
 
 	async bulkOrder(req, res) {
 		try {
-			const { products, userId } = req.body;
-			const orders = await Promise.all(
-				products.map(async (product) => {
-					return await Order.create({
-						productId: product.productId,
-						numberOfProduct: product.numberOfProduct,
-						userId,
-						sellerId: product.sellerId,
-						toPay: true,
-					});
-				})
-			);
-			const cartItems = await Cart.findAll({ where: { userId } });
-			await Promise.all(cartItems.map((item) => item.destroy()));
+			const {
+				products,
+				userId,
+				shoppingFee,
+				discountFee,
+				subTotalFee,
+				isPaid,
+			} = req.body;
+			const totalFee = subTotalFee + shoppingFee - discountFee;
+			const orderBatch = await OrderBatch.create({
+				products: products,
+				userId,
+				orderPaid: isPaid !== undefined && isPaid !== null && isPaid,
+				subTotalFee,
+				shoppingFee,
+				discountFee,
+				totalFee,
+				toShip: true,
+				toRecieve: false,
+				isComplete: false,
+			});
 
-			res.send({ success: true, orders });
+			const cartItems = await Cart.findAll({ where: { userId } });
+			await Promise.all(
+				cartItems
+					.filter((item) =>
+						products.some(
+							(product) => product.productId === item.productId
+						)
+					)
+					.map((item) => item.destroy())
+			);
+			res.send({ success: true, orderBatch });
 		} catch (error) {
 			res.send({ success: false, message: error.message });
+		}
+	}
+
+	async delieverOrder(req, res) {
+		try {
+			const { id } = req.body;
+			const order = await OrderBatch.findByPk(id);
+			await order.update({ toShip: false, toRecieve: true });
+			res.send({ success: true });
+		} catch (error) {
+			res.status(500).send({ success: false, message: error.message });
+		}
+	}
+
+	async getAllBatchOrder(req, res) {
+		try {
+			const { userId, toShip, toReceive, isComplete } = req.body;
+			const whereClause = {};
+			if (userId !== undefined && userId !== null)
+				whereClause["userId"] = userId;
+
+			const orders = await OrderBatch.findAll({
+				where: {
+					...whereClause,
+					toShip,
+					toRecieve: toReceive,
+					isComplete,
+				},
+			});
+
+			if (!orders || orders.length === 0) {
+				return res.status(404).send({
+					success: true,
+					message: "No orders found for this user",
+				});
+			}
+			if (!orders || orders.length === 0) {
+				return res.status(404).send({
+					success: false,
+					orders,
+				});
+			}
+			const formattedOrders = orders.map((order) => {
+				const products = order.products.map((product) => ({
+					productId: product.productId,
+					name: product.name,
+					price: product.price,
+					numberOfProduct: product.numberOfProduct,
+					productImage: product.productImage,
+					isRated: product.isRated,
+					rating: product.rating,
+					note: product.note,
+				}));
+
+				let status = "Pending";
+				if (order.toShip) {
+					status = "Pending";
+				} else if (order.toRecieve) {
+					status = "Delivered";
+				} else if (order.isComplete) {
+					status = "Completed";
+				}
+
+				return {
+					orderId: order.id.toString(),
+					isPaid: order.orderPaid,
+					status: status,
+					subTotalFee: order.subTotalFee,
+					discountFee: order.discountFee,
+					shoppingFee: order.shoppingFee,
+					totalAmount: order.totalFee,
+					products: products,
+					allTrack: order.allTrack,
+					createdAt: order.createdAt,
+				};
+			});
+
+			res.send({ success: true, orders: formattedOrders });
+		} catch (error) {
+			res.status(500).send({ success: false, message: error.message });
 		}
 	}
 
@@ -948,6 +1169,38 @@ class OrderRouter {
 			res.send({ success: true });
 		} catch (error) {
 			res.send({ success: false, message: error.message });
+		}
+	}
+
+	async getAllBatchOrderTabulator(req, res) {
+		try {
+			const { toShip, toReceive, isComplete, currPage, limit } = req.body;
+			if (!currPage || !limit) {
+				return res.status(400).json({
+					success: false,
+					message: "Pagination parameters are required",
+				});
+			}
+			const offset = (currPage - 1) * limit;
+			const requests = await OrderBatch.findAndCountAll({
+				where: {
+					toShip,
+					toRecieve: toReceive,
+					isComplete,
+				},
+				limit: limit,
+				offset: offset,
+				order: [["createdAt", "DESC"]],
+			});
+			res.send({
+				success: true,
+				data: requests.rows,
+				total: requests.count,
+				currentPage: currPage,
+				totalPages: Math.ceil(requests.count / limit),
+			});
+		} catch (error) {
+			res.status(500).send({ success: false, message: error.message });
 		}
 	}
 
@@ -1194,7 +1447,7 @@ class OrderRouter {
 
 class CartProduct {
 	constructor() {
-		this.router = router;
+		this.router = express.Router();
 		this.initRoutes();
 	}
 
@@ -1222,7 +1475,7 @@ class CartProduct {
 	// 				},
 	// 			],
 	// 		});
-	// 		res.send({ sucess: true, newOrder });
+	// 		res.send({ success: true, newOrder });
 	// 	} catch (error) {
 	// 		res.send({ success: false, message: error.message });
 	// 	}

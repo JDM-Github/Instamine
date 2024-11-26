@@ -310,10 +310,10 @@
 		}
 
 		.modal-title {
-			margin-bottom: 15px; /* Reduced margin */
-			font-size: 20px; /* Reduced font size */
+			margin-bottom: 15px;
+			font-size: 20px;
 			color: #ff3366;
-			font-weight: 600;
+			font-weight: bold;
 			text-transform: uppercase;
 		}
 
@@ -383,6 +383,26 @@
 						background-color: #ffccd5;
 					}
 				}
+			}
+
+			.review-list {
+				width: 100%;
+				margin-top: 10px;
+				max-height: 300px;
+				overflow-y: auto;
+			}
+
+			.review-item {
+				width: 100%;
+				padding: 10px;
+				margin-bottom: 10px;
+				border: 1px solid #ddd;
+				border-radius: 5px;
+				background-color: #f9f9f9;
+			}
+
+			.review-item p {
+				margin: 5px 0;
 			}
 
 			.save-button {
