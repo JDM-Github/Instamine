@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./SCSS/Chats.scss";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import RequestHandler from "../../Functions/RequestHandler";
 
 function Modal({ user, setSelectedUser }) {
@@ -135,38 +135,59 @@ export default function Chats() {
 
 	return (
 		<>
-			<div className="chats" onClick={() => setOpenModal(true)}></div>
+			<div
+				className="fixed bottom-5 right-5 bg-pink-500 w-24 h-24 rounded-full flex items-center justify-center text-white shadow-lg cursor-pointer hover:bg-pink-600"
+				onClick={() => setOpenModal(true)}
+			>
+				💬
+			</div>
 			{openModal && (
 				<>
+					{/* Background Overlay */}
 					<div
-						className="background-chat"
+						className="fixed inset-0 bg-black bg-opacity-50 z-150"
 						onClick={() => setOpenModal(false)}
 					></div>
-					<div className="chats-container">
-						<div className="chat-users">
-							<h2>Users</h2>
+
+					{/* Chats Container */}
+					<div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white w-full max-w-4xl h-96 rounded-lg shadow-lg flex overflow-hidden z-100">
+						{/* Users List */}
+						<div className="w-1/3 bg-gray-100 p-4 overflow-y-auto">
+							<h2 className="text-xl font-semibold mb-4">
+								Users
+							</h2>
 							{users.map((user) => (
 								<div
 									key={user.partnerId}
-									className="chat-user"
+									className="p-3 mb-2 bg-white rounded-lg shadow-sm hover:bg-gray-200 cursor-pointer transition"
 									onClick={() => handleSelectUser(user)}
 								>
-									{user.username}
-									<div>{user.lastMessage.message}</div>
+									<p className="font-medium">
+										{user.username}
+									</p>
+									<p className="text-sm text-gray-600 truncate">
+										{user.lastMessage.message}
+									</p>
 								</div>
 							))}
 						</div>
 
-						{selectedUser && (
-							<Modal
-								user={selectedUser}
-								setSelectedUser={setSelectedUser}
-							/>
-						)}
+						{/* Selected User Chat */}
+						<div className="w-2/3 bg-white p-4">
+							{selectedUser ? (
+								<Modal
+									user={selectedUser}
+									setSelectedUser={setSelectedUser}
+								/>
+							) : (
+								<div className="flex items-center justify-center h-full text-gray-500">
+									<p>Select a user to view chat</p>
+								</div>
+							)}
+						</div>
 					</div>
 				</>
 			)}
-			<ToastContainer />
 		</>
 	);
 }

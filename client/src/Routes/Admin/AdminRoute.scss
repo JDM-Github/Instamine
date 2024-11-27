@@ -1,7 +1,6 @@
 .admin {
 	display: flex;
 	flex-direction: row;
-	height: 100vh;
 	background-color: #fff0ff;
 }
 
@@ -11,5 +10,4 @@
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	max-width: calc(100% - 300px);
 }

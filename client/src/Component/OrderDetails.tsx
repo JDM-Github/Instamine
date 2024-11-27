@@ -91,72 +91,100 @@ const OrderDetailsModal = ({ isOpen, onClose, order }) => {
 	return (
 		<>
 			{isOpen && (
-				<div className="order-details-overlay">
-					<div className="modal-content">
-						<h3>Order Information</h3>
-						<div className="order-info">
-							<p>
+				<div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+					<div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-4xl">
+						<h3 className="text-2xl font-semibold text-pink-600 mb-6">
+							Order Information
+						</h3>
+						<div className="order-info mb-6">
+							<p className="text-sm text-gray-700">
 								<strong>Order ID:</strong> {order.id}
 							</p>
-							<p>
+							<p className="text-sm text-gray-700">
 								<strong>User ID:</strong> {order.userId}
 							</p>
-							<p>
+							<p className="text-sm text-gray-700">
 								<strong>Is Paid:</strong>{" "}
-								{order.orderPaid ? "Yes" : "No"}
+								<span
+									className={
+										order.orderPaid
+											? "text-green-600"
+											: "text-red-600"
+									}
+								>
+									{order.orderPaid ? "Yes" : "No"}
+								</span>
 							</p>
-							<p>
+							<p className="text-sm text-gray-700">
 								<strong>Subtotal Fee:</strong> ₱
 								{order.subTotalFee}
 							</p>
-							<p>
+							<p className="text-sm text-gray-700">
 								<strong>Discount Fee:</strong> ₱
 								{order.discountFee}
 							</p>
-							<p>
+							<p className="text-sm text-gray-700">
 								<strong>Shipping Fee:</strong> ₱
 								{order.shoppingFee}
 							</p>
-							<p>
+							<p className="text-sm text-gray-700">
 								<strong>Total Fee:</strong> ₱{order.totalFee}
 							</p>
-							<p>
+							<p className="text-sm text-gray-700">
 								<strong>Order Created:</strong>{" "}
 								{order.createdAt.split("T")[0]}
 							</p>
 						</div>
-						<div className="product-list">
+
+						<div className="product-list space-y-4 mb-6">
 							{order.products.map((product, index) => (
-								<div key={index} className="product-item">
+								<div
+									key={index}
+									className="flex items-center justify-between bg-gray-100 p-4 rounded-lg shadow-sm"
+								>
 									<img
 										src={product.productImage}
 										alt={product.name}
-										className="product-image"
+										className="w-16 h-16 object-cover rounded-md"
 									/>
-									<div className="product-details">
-										<p>
+									<div className="flex-1 pl-4">
+										<p className="text-sm font-semibold text-gray-800">
 											<strong>Name:</strong>{" "}
 											{product.name}
 										</p>
-										<p>
+										<p className="text-sm text-gray-700">
 											<strong>Price:</strong> ₱
 											{product.price}
 										</p>
-										<p>
+										<p className="text-sm text-gray-700">
 											<strong>Quantity:</strong> x
 											{product.numberOfProduct}
 										</p>
-										<p>
+										<p className="text-sm text-gray-700">
 											<strong>Rated:</strong>{" "}
-											{product.isRated ? "Yes" : "No"}
+											<span
+												className={
+													product.isRated
+														? "text-green-600"
+														: "text-red-600"
+												}
+											>
+												{product.isRated ? "Yes" : "No"}
+											</span>
 										</p>
 									</div>
 								</div>
 							))}
 						</div>
-						<button onClick={onClose} className="close-button">
-							Close
-						</button>
+
+						<div className="flex justify-end">
+							<button
+								onClick={onClose}
+								className="px-4 py-2 bg-pink-600 text-white font-semibold rounded-lg hover:bg-pink-700 transition duration-300"
+							>
+								Close
+							</button>
+						</div>
 					</div>
 				</div>
 			)}

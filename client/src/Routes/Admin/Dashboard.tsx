@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import "./Dashboard.scss";
+// import "./Dashboard.scss";
 import RequestHandler from "../../Functions/RequestHandler";
 import { toast, ToastContainer } from "react-toastify";
 import TopProductsChart from "../../Component/TopProductChart.tsx";
@@ -62,154 +62,147 @@ export default function Dashboard() {
 	}, []);
 
 	return (
-		<>
-			<div className="dashboard-container">
-				{/* <div className="dashboard-header">
-					<h2>Welcome to Instamine Admin</h2>
-					<p>Here's your business overview at a glance.</p>
-				</div> */}
-
-				<div className="dashboard-content">
-					<div className="dashboard-overview">
-						<div className="card-test total-sales">
-							<div className="card-content">
-								<h3>Total Sales</h3>
-								<p>₱ {totalSales}</p>
-							</div>
-							<div className="card-icon">
-								<i className="fa fa-dollar-sign"></i>
-							</div>
+		<div
+			className="absolute px-6 py-8 bg-gray-100 top-[60px] left-[320px] absolute"
+			style={{ width: "calc(100vw - 330px)" }}
+		>
+			<div className="dashboard-content grid grid-cols-1 lg:grid-cols-2 gap-8">
+				{/* Overview Section */}
+				<div className="dashboard-overview grid grid-cols-2 gap-6">
+					<div className="card bg-pink-100 shadow-md rounded-lg p-6 flex justify-between items-center">
+						<div>
+							<h3 className="text-lg font-semibold text-pink-600">
+								Total Sales
+							</h3>
+							<p className="text-2xl font-bold text-gray-800 text-center">
+								₱ {totalSales}
+							</p>
 						</div>
-						<div className="card-test total-users">
-							<div className="card-content">
-								<h3>Total Users</h3>
-								<p>{userCount}</p>
-							</div>
-							<div className="card-icon">
-								<i className="fa fa-users"></i>
-							</div>
-						</div>
-						<div className="card-test total-products">
-							<div className="card-content">
-								<h3>Total Products</h3>
-								<p>{productCount}</p>
-							</div>
-							<div className="card-icon">
-								<i className="fa fa-cogs"></i>
-							</div>
-						</div>
-						<div className="card-test total-orders">
-							<div className="card-content">
-								<h3>Total Orders</h3>
-								<p>{totalOrders}</p>
-							</div>
-							<div className="card-icon">
-								<i className="fa fa-box"></i>
-							</div>
+						<div className="text-pink-500 text-4xl">
+							<i className="fa fa-dollar-sign"></i>
 						</div>
 					</div>
 
-					<div className="dashboard-charts">
-						<div className="chart-card">
-							<h3>Sales Over Time</h3>
-							<div className="chart-placeholder">
-								{salesOverTime && salesOverTime.length > 0 ? (
-									<Line
-										data={{
-											labels: salesOverTime.map(
-												(data) => data.month
-											),
-											datasets: [
-												{
-													label: "Revenue ($)",
-													data: salesOverTime.map(
-														(data) =>
-															parseFloat(
-																data.revenue
-															)
-													),
-													borderColor: "#ff6384",
-													backgroundColor:
-														"rgba(255, 99, 132, 0.5)",
-													fill: true,
-													tension: 0.4,
-												},
-												{
-													label: "Total Sales",
-													data: salesOverTime.map(
-														(data) =>
-															data.totalSales
-													),
-													borderColor: "#36a2eb",
-													backgroundColor:
-														"rgba(54, 162, 235, 0.5)",
-													fill: true,
-													tension: 0.4,
-												},
-											],
-										}}
-										options={{
-											responsive: true,
-											scales: {
-												x: {
-													title: {
-														display: true,
-														text: "Month",
-													},
-												},
-												y: {
-													title: {
-														display: true,
-														text: "Amount",
-													},
-												},
+					<div className="card bg-pink-100 shadow-md rounded-lg p-6 flex justify-between items-center">
+						<div>
+							<h3 className="text-lg font-semibold text-pink-600">
+								Total Users
+							</h3>
+							<p className="text-2xl font-bold text-gray-800 text-center">
+								{userCount}
+							</p>
+						</div>
+						<div className="text-pink-500 text-4xl">
+							<i className="fa fa-users"></i>
+						</div>
+					</div>
+
+					<div className="card bg-pink-100 shadow-md rounded-lg p-6 flex justify-between items-center">
+						<div>
+							<h3 className="text-lg font-semibold text-pink-600">
+								Total Products
+							</h3>
+							<p className="text-2xl font-bold text-gray-800 text-center">
+								{productCount}
+							</p>
+						</div>
+						<div className="text-pink-500 text-4xl">
+							<i className="fa fa-cogs"></i>
+						</div>
+					</div>
+
+					<div className="card bg-pink-100 shadow-md rounded-lg p-6 flex justify-between items-center">
+						<div>
+							<h3 className="text-lg font-semibold text-pink-600">
+								Total Orders
+							</h3>
+							<p className="text-2xl font-bold text-gray-800 text-center">
+								{totalOrders}
+							</p>
+						</div>
+						<div className="text-pink-500 text-4xl">
+							<i className="fa fa-box"></i>
+						</div>
+					</div>
+				</div>
+
+				{/* Charts Section */}
+				<div className="dashboard-charts space-y-6">
+					<div className="chart-card bg-white shadow-md rounded-lg p-6">
+						<h3 className="text-lg font-semibold text-pink-600 mb-4">
+							Sales Over Time
+						</h3>
+						<div className="chart-placeholder h-72">
+							{salesOverTime && salesOverTime.length > 0 ? (
+								<Line
+									data={{
+										labels: salesOverTime.map(
+											(data) => data.month
+										),
+										datasets: [
+											{
+												label: "Revenue ($)",
+												data: salesOverTime.map(
+													(data) =>
+														parseFloat(data.revenue)
+												),
+												borderColor: "#ff6384",
+												backgroundColor:
+													"rgba(255, 99, 132, 0.5)",
+												fill: true,
+												tension: 0.4,
 											},
-											plugins: {
-												tooltip: {
-													mode: "index",
-													intersect: false,
-												},
-												legend: {
+											{
+												label: "Total Sales",
+												data: salesOverTime.map(
+													(data) => data.totalSales
+												),
+												borderColor: "#36a2eb",
+												backgroundColor:
+													"rgba(54, 162, 235, 0.5)",
+												fill: true,
+												tension: 0.4,
+											},
+										],
+									}}
+									options={{
+										responsive: true,
+										scales: {
+											x: {
+												title: {
 													display: true,
-													position: "top",
+													text: "Month",
 												},
 											},
-										}}
-									/>
-								) : (
-									<p>No sales data available</p>
-								)}
-							</div>
+											y: {
+												title: {
+													display: true,
+													text: "Amount",
+												},
+											},
+										},
+										plugins: {
+											tooltip: {
+												mode: "index",
+												intersect: false,
+											},
+											legend: {
+												display: true,
+												position: "top",
+											},
+										},
+									}}
+								/>
+							) : (
+								<p className="text-gray-500">
+									No sales data available
+								</p>
+							)}
 						</div>
-
-						{/* <div className="chart-card">
-							<h3>Top Products</h3>
-							<div className="chart-placeholder">
-								[Chart Placeholder]
-							</div>
-						</div> */}
-						<TopProductsChart topProducts={topProducts} />
 					</div>
-
-					{/* <div className="recent-activity">
-						<h3>Recent Activity</h3>
-						<ul>
-							<li>
-								User <b>John Doe</b> placed an order for{" "}
-								<b>3 items</b>
-							</li>
-							<li>
-								Product <b>"Pink T-Shirt"</b> was added to
-								inventory
-							</li>
-							<li>
-								User <b>Jane Smith</b> registered
-							</li>
-							<li>Order #1234 was marked as shipped</li>
-						</ul>
-					</div> */}
+					<TopProductsChart topProducts={topProducts} />
 				</div>
 			</div>
-		</>
+		</div>
 	);
 }

@@ -29,6 +29,33 @@ const YoutubeMetadata = sequelize.define("YoutubeMetadata", {
 	},
 });
 
+const LiveStreamSchedule = sequelize.define(
+	"LiveStreamSchedule",
+	{
+		url: {
+			type: DataTypes.STRING,
+		},
+		startTimestamp: {
+			type: DataTypes.DATE,
+		},
+		products: {
+			type: DataTypes.JSON,
+			defaultValue: [],
+		},
+		isArchived: {
+			type: DataTypes.BOOLEAN,
+			defaultValue: false,
+		},
+		isComplete: {
+			type: DataTypes.BOOLEAN,
+			defaultValue: false,
+		},
+	},
+	{
+		timestamps: true,
+	}
+);
+
 const ChatSend = sequelize.define("ChatSend", {
 	user: {
 		type: Sequelize.STRING,
@@ -578,4 +605,5 @@ module.exports = {
 	ChatReceive,
 	Notification,
 	OrderBatch,
+	LiveStreamSchedule,
 };

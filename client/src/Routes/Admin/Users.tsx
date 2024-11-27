@@ -6,6 +6,7 @@ import {
 	faCheckCircle,
 	faEye,
 	faLock,
+	faPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import RequestHandler from "../../Functions/RequestHandler.js";
 import { toast, ToastContainer } from "react-toastify";

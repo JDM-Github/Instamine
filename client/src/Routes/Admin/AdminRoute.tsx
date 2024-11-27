@@ -17,6 +17,8 @@ import AdminLivestream from "./StartStream.tsx";
 import DelieveredOrders from "./DelieveredOrder.tsx";
 import CompletedOrders from "./CompleteOrder.tsx";
 import Login from "./Login.tsx";
+import ScheduleLivestream from "./ScheduleLive.tsx";
+import CompletedLive from "./CompletedLive.tsx";
 
 export default function AdminRoute({ className }) {
 	const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -36,6 +38,14 @@ export default function AdminRoute({ className }) {
 								path="/stream"
 								element={<AdminLivestream />}
 							/>
+							<Route
+								path="/scheduled-stream"
+								element={<ScheduleLivestream />}
+							/>
+							<Route
+								path="/completed-stream"
+								element={<CompletedLive />}
+							/>
 							<Route path="/users" element={<Users />} />
 							<Route path="/orders" element={<Orders />} />
 							<Route
@@ -51,7 +61,6 @@ export default function AdminRoute({ className }) {
 								element={<ProductList />}
 							/>
 						</Routes>
-						<Copyright />
 						<Chats />
 					</div>
 					<ToastContainer />

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import "./SCSS/ProductList.scss";
+// import "./SCSS/ProductList.scss";
 import RequestHandler from "../../Functions/RequestHandler";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -29,7 +29,7 @@ const ProductList: React.FC = () => {
 	const [loading, setloading] = useState(false);
 	const [isArchived, setIsArchived] = useState(false);
 	const [productsData, setProductsData] = useState<Product[]>([]);
-	const [allReview, setReview] = useState(null);
+	const [allReview, setReview] = useState<[] | null>(null);
 
 	const loadRequestData = async () => {
 		try {
@@ -41,13 +41,13 @@ const ProductList: React.FC = () => {
 			if (data.success === false) {
 				toast.error(
 					data.message ||
-						"Error occurred. Please check your credentials."
+						"Error occurred. Please	check your credentials."
 				);
 			} else {
 				setProductsData(data.products);
 			}
 		} catch (error) {
-			toast.error(`An error occurred while requesting data. ${error}`);
+			toast.error(`An	error occurred while requesting	data. ${error}`);
 		}
 	};
 	useEffect(() => {
@@ -87,7 +87,7 @@ const ProductList: React.FC = () => {
 	) => {
 		const files = Array.from(e.target.files || []);
 		if (files.length > 5) {
-			alert("You can only upload up to 5 images.");
+			alert("You can only	upload up to 5 images.");
 			return;
 		}
 
@@ -123,13 +123,13 @@ const ProductList: React.FC = () => {
 			if (data.success === false) {
 				toast.error(
 					data.message ||
-						"Error occurred. Please check your credentials."
+						"Error occurred. Please	check your credentials."
 				);
 			} else {
 				setReview(data.allRate);
 			}
 		} catch (error) {
-			toast.error(`An error occurred while requesting data. ${error}`);
+			toast.error(`An	error occurred while requesting	data. ${error}`);
 		}
 
 		setSelectedProduct(product);
@@ -188,16 +188,16 @@ const ProductList: React.FC = () => {
 			if (data.success === false) {
 				toast.error(
 					data.message ||
-						"Error occurred. Please check your credentials."
+						"Error occurred. Please	check your credentials."
 				);
 			} else {
 				setEditData(null);
 				setAddData(null);
-				toast.success("Successfully create/edit a product.");
+				toast.success("Successfully	create/edit	a product.");
 				await loadRequestData();
 			}
 		} catch (error) {
-			toast.error(`An error occurred while saving data. ${error}`);
+			toast.error(`An	error occurred while saving	data. ${error}`);
 		}
 		setloading(false);
 	};
@@ -223,16 +223,16 @@ const ProductList: React.FC = () => {
 				if (data.success === false) {
 					toast.error(
 						data.message ||
-							"Error occurred. Please check your credentials."
+							"Error occurred. Please	check your credentials."
 					);
 				} else {
 					setEditData(null);
 					setAddData(null);
-					toast.success("Successfully archive a product.");
+					toast.success("Successfully	archive	a product.");
 					await loadRequestData();
 				}
 			} catch (error) {
-				toast.error(`An error occurred while saving data. ${error}`);
+				toast.error(`An	error occurred while saving	data. ${error}`);
 			}
 		}
 		handleCloseModal();
@@ -265,39 +265,65 @@ const ProductList: React.FC = () => {
 	return (
 		<>
 			{loading && (
-				<div style={{ backgroundColor: "black", zIndex: 9999 }}> </div>
+				<div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center	justify-center">
+					<div className="text-white">Loading...</div>
+				</div>
 			)}
-			<button className="status-button" onClick={handleArchiveChange}>
+
+			<button
+				className={`fixed top-4	left-[320px] z-50 px-8 py-2	rounded-md text-white font-semibold	${
+					isArchived ? "bg-gray-500" : "bg-pink-600"
+				} hover:bg-pink-700	transition duration-300`}
+				onClick={handleArchiveChange}
+			>
 				{isArchived ? "ARCHIVED" : "ACTIVE"}
 			</button>
-			<div className="product-list">
-				<div className="product-grid">
+
+			<div className="product-list mt-6 top-[60px] left-[320px] absolute">
+				<div className="product-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4	gap-6">
 					{!isArchived && (
-						<img
-							src="https://cdn-icons-png.flaticon.com/512/7387/7387315.png"
-							className="add-product"
-							onClick={handleAddProductClick}
-						/>
+						<div className="fixed top-4 right-4 z-50">
+							<div
+								className="w-14 h-14 bg-gray-500 rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-gray-600 transition-transform hover:scale-110 duration-300"
+								onClick={handleAddProductClick}
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									fill="none"
+									viewBox="0 0 24 24"
+									strokeWidth={2}
+									stroke="white"
+									className="w-8 h-8"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M12 4.5v15m7.5-7.5h-15"
+									/>
+								</svg>
+							</div>
+						</div>
 					)}
 
 					{productsData.map((product) => (
 						<div
-							className="product-card"
+							className="product-card	bg-white rounded-lg	shadow-md p-4 cursor-pointer hover:shadow-lg transition-shadow duration-300"
 							key={product.id}
 							onClick={() => handleProductClick(product)}
 						>
 							<img
 								src={
-									product.product_image
-										? product.product_image
-										: "https://via.placeholder.com/200"
+									product.product_image ||
+									"https://via.placeholder.com/200"
 								}
 								alt={product.name}
-								className="product-image"
+								className="product-image w-full	h-40 object-cover rounded-md"
 							/>
-							<div className="product-info">
-								<h3 className="product-name">{product.name}</h3>
-								<p className="product-price">
+							<div className="product-info mt-4">
+								<h3 className="product-name	text-lg	font-semibold text-gray-800	truncate">
+									{product.name}
+								</h3>
+								<p className="product-price	text-lg	text-pink-600">
 									₱{product.price}
 								</p>
 							</div>
@@ -306,204 +332,222 @@ const ProductList: React.FC = () => {
 				</div>
 
 				{isModalOpen && editData && (
-					<div className="modal-overlay">
+					<div className="modal-overlay fixed	inset-0	bg-black bg-opacity-50 z-50	flex items-center justify-center">
 						<div
-							className="modal-test"
+							className="modal-test p-1 w-auto py-4"
 							onClick={(e) => e.stopPropagation()}
 						>
 							<button
-								className="close-button"
+								className="close-button	text-2xl font-semibold text-white absolute top-4 right-4"
 								onClick={handleCloseModal}
 							>
 								&times;
 							</button>
-							<h2 className="modal-title">
-								{isArchived
-									? "Product Overview"
-									: "Edit Product"}
-							</h2>
 
-							<div className="modal-form">
-								<label>Product Name</label>
-								<input
-									type="text"
-									name="name"
-									value={editData.name}
-									onChange={handleInputChange}
-									className="modal-input"
-									disabled={isArchived}
-								/>
+							{/*	Modal content as 3 cards horizontally aligned */}
+							<div className="modal-content flex flex-row	gap-2 justify-center">
+								{/*	Column 1: Edit Product */}
+								<div className="edit-product card bg-white rounded-lg shadow-md	p-4	w-full sm:w-1/4	flex-shrink-0">
+									<h3 className="text-xl font-semibold text-gray-800 mb-4">
+										{isArchived
+											? "Product Overview"
+											: "Edit	Product"}
+									</h3>
+									<div className="modal-form space-y-4">
+										<label className="block	text-sm	text-gray-700">
+											Product Name
+										</label>
+										<input
+											type="text"
+											name="name"
+											value={editData.name}
+											onChange={handleInputChange}
+											className="modal-input w-full px-4 py-2	border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+											disabled={isArchived}
+										/>
 
-								<label>Price</label>
-								<input
-									type="number"
-									name="price"
-									value={editData.price}
-									onChange={handleInputChange}
-									className="modal-input"
-									disabled={isArchived}
-								/>
+										<label className="block	text-sm	text-gray-700">
+											Price
+										</label>
+										<input
+											type="number"
+											name="price"
+											value={editData.price}
+											onChange={handleInputChange}
+											className="modal-input w-full px-4 py-2	border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+											disabled={isArchived}
+										/>
 
-								<label>Stock</label>
-								<input
-									type="number"
-									name="number_of_stock"
-									value={editData.number_of_stock}
-									onChange={handleInputChange}
-									className="modal-input"
-									disabled={isArchived}
-								/>
+										<label className="block	text-sm	text-gray-700">
+											Stock
+										</label>
+										<input
+											type="number"
+											name="number_of_stock"
+											value={editData.number_of_stock}
+											onChange={handleInputChange}
+											className="modal-input w-full px-4 py-2	border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+											disabled={isArchived}
+										/>
 
-								<label>Specification</label>
-								<textarea
-									name="specification"
-									value={editData.specification}
-									onChange={handleInputChange}
-									className="modal-textarea"
-									disabled={isArchived}
-								/>
-								{!isArchived ? (
-									<>
-										<button
-											className="save-button"
-											onClick={handleSaveChanges}
-										>
-											Save Changes
-										</button>
-										<button
-											style={{ marginTop: "10px" }}
-											className="save-button"
-											onClick={handleArchiveProducts}
-										>
-											Archive Product
-										</button>
-									</>
-								) : (
-									<>
-										<button
-											className="save-button"
-											onClick={handleArchiveProducts}
-										>
-											Restore Product
-										</button>
-									</>
-								)}
-							</div>
-						</div>
-						<div className="modal-images">
-							<div className="modal-form">
-								<label>Change Product Image (Main)</label>
-								<input
-									type="file"
-									accept="image/*"
-									onChange={handleMainImageChange}
-									className="modal-input"
-									disabled={isArchived}
-								/>
-								{mainImagePreview && (
-									<img
-										src={mainImagePreview}
-										alt="Main Preview"
-										className="image-preview"
-									/>
-								)}
+										<label className="block	text-sm	text-gray-700">
+											Specification
+										</label>
+										<textarea
+											name="specification"
+											value={editData.specification}
+											onChange={handleInputChange}
+											className="modal-textarea w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none	focus:ring-2 focus:ring-pink-500"
+											disabled={isArchived}
+										/>
 
-								<label>
-									Change Additional Product Images (Max 5)
-								</label>
-								<input
-									type="file"
-									accept="image/*"
-									multiple
-									onChange={handleAdditionalImagesChange}
-									className="modal-input"
-									disabled={isArchived}
-								/>
-								<div className="additional-images-preview">
-									{additionalImagesPreview.map(
-										(image, index) => (
-											<div
-												key={index}
-												className="image-wrapper"
-											>
-												<img
-													src={image}
-													alt={`Preview ${index + 1}`}
-													className="image-preview"
-												/>
+										{!isArchived ? (
+											<>
 												<button
-													type="button"
-													className="remove-button"
-													onClick={() =>
-														handleRemoveImage(index)
-													}
-													disabled={isArchived}
+													className="save-button w-full py-2 px-4	bg-pink-600	text-white font-semibold rounded-md	hover:bg-pink-700 transition duration-300"
+													onClick={handleSaveChanges}
 												>
-													✕
+													Save Changes
 												</button>
-											</div>
-										)
-									)}
-								</div>
-							</div>
-						</div>
-
-						<div className="modal-images">
-							<div className="modal-form">
-								<label
-									style={{
-										fontSize: "18px",
-										fontWeight: "bold",
-										color: "#333",
-									}}
-								>
-									All Reviews
-								</label>
-								<div
-									className="average-rating"
-									style={{
-										marginBottom: "10px",
-										fontSize: "16px",
-									}}
-								>
-									<strong>Overall Rating:</strong>{" "}
-									{averageRating}{" "}
-									<span
-										style={{
-											color: "#f4b400",
-											fontSize: "18px",
-										}}
-									>
-										{renderStars(averageRating)}
-									</span>
-								</div>
-								<div className="review-list">
-									{allReview &&
-										allReview.map((review, index) => (
-											<div
-												key={review.id}
-												className="review-item"
+												<button
+													className="archive-button w-full py-2 px-4 bg-gray-500 text-white font-semibold	rounded-md hover:bg-gray-600 transition	duration-300 mt-4"
+													onClick={
+														handleArchiveProducts
+													}
+												>
+													Archive Product
+												</button>
+											</>
+										) : (
+											<button
+												className="restore-button w-full py-2 px-4 bg-green-600	text-white font-semibold rounded-md	hover:bg-green-700 transition duration-300"
+												onClick={handleArchiveProducts}
 											>
-												<p>
-													<strong>Rating:</strong>{" "}
-													{review.rating}
-												</p>
-												<p>
-													<strong>Review:</strong>{" "}
-													{review.review}
-												</p>
-												<p>
-													<strong>User ID:</strong>{" "}
-													{review.userId}
-												</p>
-												<p>
-													<strong>Created At:</strong>{" "}
-													{new Date(
-														review.createdAt
-													).toLocaleString()}
-												</p>
-											</div>
-										))}
+												Restore Product
+											</button>
+										)}
+									</div>
+								</div>
+
+								{/*	Column 2: Product Images */}
+								<div className="product-images card	bg-white rounded-lg	shadow-md p-4 w-full sm:w-1/4 flex-shrink-0">
+									<h3 className="text-xl font-semibold text-gray-800 mb-4">
+										Product Images
+									</h3>
+									<div className="modal-form space-y-4">
+										<label className="block	text-sm	text-gray-700">
+											Change Product Image (Main)
+										</label>
+										<input
+											type="file"
+											accept="image/*"
+											onChange={handleMainImageChange}
+											className="modal-input w-full px-4 py-2	border border-gray-300 rounded-md"
+											disabled={isArchived}
+										/>
+										{mainImagePreview && (
+											<img
+												src={mainImagePreview}
+												alt="Main Preview"
+												className="image-preview w-full	mt-4 rounded-md"
+											/>
+										)}
+
+										<label className="block	text-sm	text-gray-700 mt-6">
+											Change Additional Product Images
+											(Max 5)
+										</label>
+										<input
+											type="file"
+											accept="image/*"
+											multiple
+											onChange={
+												handleAdditionalImagesChange
+											}
+											className="modal-input w-full px-4 py-2	border border-gray-300 rounded-md"
+											disabled={isArchived}
+										/>
+										<div className="additional-images-preview grid grid-cols-2 gap-4 mt-4">
+											{additionalImagesPreview.map(
+												(image, index) => (
+													<div
+														key={index}
+														className="image-wrapper relative"
+													>
+														<img
+															src={image}
+															alt={`Preview ${
+																index + 1
+															}`}
+															className="image-preview w-full	h-24 object-cover rounded-md"
+														/>
+														<button
+															type="button"
+															className="remove-button absolute top-1	right-1	text-white bg-black	bg-opacity-50 rounded-full"
+															onClick={() =>
+																handleRemoveImage(
+																	index
+																)
+															}
+															disabled={
+																isArchived
+															}
+														>
+															✕
+														</button>
+													</div>
+												)
+											)}
+										</div>
+									</div>
+								</div>
+
+								{/*	Column 3: All Ratings */}
+								<div className="all-ratings	card bg-white rounded-lg shadow-md p-4 w-full sm:w-1/4 flex-shrink-0">
+									<h3 className="text-xl font-semibold text-gray-800 mb-4">
+										All Reviews
+									</h3>
+									<div className="average-rating text-sm text-gray-600 mb-4">
+										<strong>Overall Rating:</strong>{" "}
+										{averageRating}{" "}
+										<span className="text-yellow-400">
+											{renderStars(averageRating)}
+										</span>
+									</div>
+									<div className="review-list	space-y-4">
+										{allReview &&
+											allReview.map((review) => (
+												<div
+													key={review.id}
+													className="review-item bg-gray-100 p-4 rounded-md shadow-sm"
+												>
+													<p>
+														<strong>Rating:</strong>{" "}
+														{review.rating}
+													</p>
+													<p>
+														<strong>Review:</strong>{" "}
+														{review.review}
+													</p>
+													<p>
+														<strong>
+															User ID:
+														</strong>
+														{"	"}
+														{review.userId}
+													</p>
+													<p>
+														<strong>
+															Created At:
+														</strong>
+														{"	"}
+														{new Date(
+															review.createdAt
+														).toLocaleString()}
+													</p>
+												</div>
+											))}
+									</div>
 								</div>
 							</div>
 						</div>
@@ -511,121 +555,148 @@ const ProductList: React.FC = () => {
 				)}
 
 				{isModalOpen && addData && (
-					<div className="modal-overlay">
+					<div className="modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
 						<div
-							className="modal-test"
+							className="modal-test bg-white rounded-lg shadow-lg p-6 w-full max-w-full sm:max-w-[40vw]"
 							onClick={(e) => e.stopPropagation()}
 						>
 							<button
-								className="close-button"
+								className="close-button absolute text-white top-4 right-4 text-2xl font-semibold"
 								onClick={handleCloseModal}
 							>
 								&times;
 							</button>
-							<h2 className="modal-title">Add Product</h2>
+							<h2 className="modal-title text-2xl font-semibold text-pink-600 mb-4">
+								Add Product
+							</h2>
 
-							<div className="modal-form">
-								<label>Product Name</label>
-								<input
-									type="text"
-									name="name"
-									value={addData.name}
-									onChange={handleInputChange}
-									className="modal-input"
-								/>
-
-								<label>Category</label>
-								<input
-									type="text"
-									name="category"
-									value={addData.category}
-									onChange={handleInputChange}
-									className="modal-input"
-								/>
-
-								<label>Price</label>
-								<input
-									type="number"
-									name="price"
-									value={addData.price}
-									onChange={handleInputChange}
-									className="modal-input"
-								/>
-
-								<label>Stock</label>
-								<input
-									type="number"
-									name="number_of_stock"
-									value={addData.number_of_stock}
-									onChange={handleInputChange}
-									className="modal-input"
-								/>
-
-								<label>Specification</label>
-								<textarea
-									name="specification"
-									value={addData.specification}
-									onChange={handleInputChange}
-									className="modal-textarea"
-								/>
-
-								<button
-									className="save-button"
-									onClick={handleSaveChanges}
-								>
-									Add New Product
-								</button>
-							</div>
-						</div>
-						<div className="modal-images">
-							<div className="modal-form">
-								<label>Product Image (Main)</label>
-								<input
-									type="file"
-									accept="image/*"
-									onChange={handleMainImageChange}
-									className="modal-input"
-								/>
-								{mainImagePreview && (
-									<img
-										src={mainImagePreview}
-										alt="Main Preview"
-										className="image-preview"
+							<div className="modal-content grid grid-cols-1 sm:grid-cols-2 gap-8">
+								{/* Left Column: Form Inputs */}
+								<div className="modal-form space-y-4">
+									<label className="block text-sm text-gray-700">
+										Product Name
+									</label>
+									<input
+										type="text"
+										name="name"
+										value={addData.name}
+										onChange={handleInputChange}
+										className="modal-input w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
 									/>
-								)}
 
-								<label>Additional Product Images (Max 5)</label>
-								<input
-									type="file"
-									accept="image/*"
-									multiple
-									onChange={handleAdditionalImagesChange}
-									className="modal-input"
-								/>
-								<div className="additional-images-preview">
-									{additionalImagesPreview.map(
-										(image, index) => (
-											<div
-												key={index}
-												className="image-wrapper"
-											>
-												<img
-													src={image}
-													alt={`Preview ${index + 1}`}
-													className="image-preview"
-												/>
-												<button
-													type="button"
-													className="remove-button"
-													onClick={() =>
-														handleRemoveImage(index)
-													}
-												>
-													✕
-												</button>
-											</div>
-										)
-									)}
+									<label className="block text-sm text-gray-700">
+										Category
+									</label>
+									<input
+										type="text"
+										name="category"
+										value={addData.category}
+										onChange={handleInputChange}
+										className="modal-input w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+									/>
+
+									<label className="block text-sm text-gray-700">
+										Price
+									</label>
+									<input
+										type="number"
+										name="price"
+										value={addData.price}
+										onChange={handleInputChange}
+										className="modal-input w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+									/>
+
+									<label className="block text-sm text-gray-700">
+										Stock
+									</label>
+									<input
+										type="number"
+										name="number_of_stock"
+										value={addData.number_of_stock}
+										onChange={handleInputChange}
+										className="modal-input w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+									/>
+
+									<label className="block text-sm text-gray-700">
+										Specification
+									</label>
+									<textarea
+										name="specification"
+										value={addData.specification}
+										onChange={handleInputChange}
+										className="modal-textarea w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+									/>
+
+									<button
+										className="save-button w-full py-2 px-4 bg-pink-600 text-white font-semibold rounded-md hover:bg-pink-700 transition duration-300"
+										onClick={handleSaveChanges}
+									>
+										Add New Product
+									</button>
+								</div>
+
+								{/* Right Column: Image Upload */}
+								<div className="modal-images space-y-4">
+									<div className="modal-form">
+										<label className="block text-sm text-gray-700">
+											Product Image (Main)
+										</label>
+										<input
+											type="file"
+											accept="image/*"
+											onChange={handleMainImageChange}
+											className="modal-input w-full px-4 py-2 border border-gray-300 rounded-md"
+										/>
+										{/* {mainImagePreview && (
+											<img
+												src={mainImagePreview}
+												alt="Main Preview"
+												className="image-preview w-full mt-4 rounded-md"
+											/>
+										)} */}
+
+										<label className="block text-sm text-gray-700 mt-6">
+											Additional Product Images (Max 5)
+										</label>
+										<input
+											type="file"
+											accept="image/*"
+											multiple
+											onChange={
+												handleAdditionalImagesChange
+											}
+											className="modal-input w-full px-4 py-2 border border-gray-300 rounded-md"
+										/>
+										<div className="additional-images-preview grid grid-cols-2 gap-4 mt-4">
+											{additionalImagesPreview.map(
+												(image, index) => (
+													<div
+														key={index}
+														className="image-wrapper relative"
+													>
+														<img
+															src={image}
+															alt={`Preview ${
+																index + 1
+															}`}
+															className="image-preview w-full h-24 object-cover rounded-md"
+														/>
+														<button
+															type="button"
+															className="remove-button absolute top-1 right-1 text-white bg-black bg-opacity-50 rounded-full"
+															onClick={() =>
+																handleRemoveImage(
+																	index
+																)
+															}
+														>
+															✕
+														</button>
+													</div>
+												)
+											)}
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>

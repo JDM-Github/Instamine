@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import "./SCSS/StartStream.scss";
+import { useLocation } from "react-router-dom";
+// import "./SCSS/StartStream.scss";
 import RequestHandler from "../../Functions/RequestHandler";
 import { toast } from "react-toastify";
 
@@ -10,10 +11,14 @@ const AdminLivestream = () => {
 		user: string;
 		message: string;
 	}
-	const [showOverlay, setShowOverlay] = useState(true);
-	const [isStreaming, setIsStreaming] = useState(false);
-	const [livestreamUrl, setLivestreamUrl] = useState("");
+	const { state } = useLocation();
+	const streamUrl = state?.streamUrl || "";
+	const isStream = state?.isStream || false;
+
+	const [isStreaming, setIsStreaming] = useState(isStream);
+	const [livestreamUrl, setLivestreamUrl] = useState(streamUrl);
 	const [chatMessages, setChatMessages] = useState<Chat[]>([]);
+	const [showProduct, setShowProduct] = useState(false);
 
 	const fetchChatMessages = async () => {
 		if (isStreaming)
@@ -50,6 +55,8 @@ const AdminLivestream = () => {
 				toast.error("Error fetching chat messages:", error);
 			}
 	};
+
+	const displayProduct = async () => {};
 
 	const fetchYTUrl = async () => {
 		try {
@@ -114,27 +121,11 @@ const AdminLivestream = () => {
 			return;
 		}
 		try {
-			// const metadataResponse = await fetch(
-			// 	`https://www.googleapis.com/youtube/v3/videos?part=snippet,liveStreamingDetails&id=${videoId}&key=AIzaSyAPUSVvfNXEClIXf4grz6KacKiNcm-1shU`
-			// );
-			// const metadataData = await metadataResponse.json();
-			// if (metadataData.error?.errors?.[0]?.reason === "quotaExceeded") {
-			// 	toast.error(
-			// 		"You have exceeded your YouTube API quota. Please try again later."
-			// 	);
-			// 	return;
-			// }
-			// if (!metadataData.items || metadataData.items.length === 0) {
-			// 	toast.error("Failed to fetch metadata from YouTube API.");
-			// 	return;
-			// }
-			// const metadata = metadataData.items[0];
 			const data = await RequestHandler.handleRequest(
 				"post",
 				"youtube/start-stream",
 				{
 					url: livestreamUrl.trim(),
-					// metadata,
 				}
 			);
 			if (data.success === false) {
@@ -152,7 +143,7 @@ const AdminLivestream = () => {
 	};
 
 	const handleShowProduct = () => {
-		alert("Product displayed to viewers!");
+		setShowProduct((prevState) => !prevState);
 	};
 
 	const getYouTubeVideoId = (url) => {
@@ -162,7 +153,6 @@ const AdminLivestream = () => {
 		return match ? match[1] : "";
 	};
 
-	// Helper function to extract Instagram Post ID
 	const getInstagramPostId = (url) => {
 		const regex = /instagram\.com\/p\/([^\/]+)\//;
 		const match = url.match(regex);
@@ -221,33 +211,49 @@ const AdminLivestream = () => {
 		}
 	};
 
+	const scheduledProduct = {
+		name: "Pink Summer Dress",
+		image: "https://via.placeholder.com/150",
+		time: "2:00 PM",
+		price: 49.99,
+		description: "A beautiful summer dress perfect for any occasion.",
+	};
+
 	return (
-		<div className="admin-livestream">
-			<div className="livestream-container">
-				<div className="video-section">
-					<h2>Livestream</h2>
+		<div
+			className="admin-livestream top-[50px] left-[310px] absolute bg-pink-50 min-h-screen p-6"
+			style={{ width: "calc(100vw - 340px)" }}
+		>
+			<div className="livestream-container flex flex-col lg:flex-row gap-6 items-stretch h-[80vh]">
+				{/* Video Section */}
+				<div className="video-section bg-white shadow-lg rounded-lg p-6 w-full lg:w-2/3 flex flex-col">
+					<h2 className="text-2xl font-bold text-pink-600 mb-4">
+						Livestream
+					</h2>
 					{isStreaming && livestreamUrl ? (
 						getSrc(livestreamUrl)
 					) : (
-						<div className="live-placeholder">
+						<div className="live-placeholder border-2 border-pink-300 border-dashed rounded-lg p-4 text-pink-500 flex-grow">
 							<p>
 								Enter a YouTube Livestream URL to start
 								streaming.
 							</p>
 						</div>
 					)}
-					<div className="url-input-container">
+					<div className="url-input-container flex mt-4 gap-4">
 						<input
 							type="text"
-							className="url-input"
+							className="url-input flex-grow px-4 py-2 border border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 disabled:bg-gray-100"
 							placeholder="Enter YouTube Livestream URL"
 							value={livestreamUrl}
 							disabled={isStreaming}
 							onChange={(e) => setLivestreamUrl(e.target.value)}
 						/>
 						<button
-							className={`start-button ${
-								isStreaming ? "red-button" : ""
+							className={`start-button px-4 py-2 text-white font-bold rounded-lg ${
+								isStreaming
+									? "bg-pink-600 hover:bg-pink-700"
+									: "bg-pink-400 hover:bg-pink-500"
 							}`}
 							onClick={
 								isStreaming
@@ -255,39 +261,170 @@ const AdminLivestream = () => {
 									: handleStartStream
 							}
 						>
-							{isStreaming ? `End Stream` : `Start Stream`}
+							{isStreaming ? "End Stream" : "Start Stream"}
 						</button>
 					</div>
 				</div>
 
-				<div className="chat-section">
-					<h2>Live Chat</h2>
-					<div className="chat-box">
+				{/* Chat Section */}
+				<div className="chat-section bg-white shadow-lg rounded-lg p-6 lg:w-1/3 flex flex-col">
+					{/* Live Chat Section */}
+					<h2 className="text-2xl font-bold text-pink-600 mb-4">
+						Live Chat
+					</h2>
+					<div className="chat-box h-full overflow-y-auto space-y-4 flex-grow">
 						{chatMessages.map((msg) => (
-							<>
+							<div
+								key={msg.id}
+								className="flex items-start gap-4"
+							>
 								<img
 									src={
 										msg.userProfile || "default-avatar.png"
 									}
 									alt={`${msg.user}'s profile`}
-									className="profile-pic"
+									className="w-10 h-10 rounded-full"
 								/>
-								<div key={msg.id} className="chat-message">
-									<strong>{msg.user}: </strong>
-									<span>{msg.message}</span>
+								<div>
+									<strong className="text-pink-600">
+										{msg.user}:
+									</strong>
+									<p className="text-gray-700">
+										{msg.message}
+									</p>
 								</div>
-							</>
+							</div>
 						))}
+					</div>
+
+					{/* Scheduled Product Section */}
+					<div className="scheduled-product mt-6">
+						<h2 className="text-xl font-semibold text-pink-500 mb-4">
+							Current Product Scheduled
+						</h2>
+						{scheduledProduct ? (
+							<div className="product-details flex items-start gap-4 bg-gray-50 shadow-md rounded-lg p-4">
+								<img
+									src={scheduledProduct.image}
+									alt={scheduledProduct.name}
+									className="w-24 h-24 rounded-lg object-cover"
+								/>
+								<div>
+									<h3 className="text-lg font-bold text-gray-800">
+										{scheduledProduct.name}
+									</h3>
+									<p className="text-gray-600">
+										Scheduled Time:{" "}
+										<span className="text-gray-800 font-semibold">
+											{scheduledProduct.time}
+										</span>
+									</p>
+									<p className="text-gray-600">
+										Price:{" "}
+										<span className="text-pink-600 font-bold">
+											${scheduledProduct.price}
+										</span>
+									</p>
+									<p className="text-gray-500 mt-2">
+										{scheduledProduct.description}
+									</p>
+								</div>
+							</div>
+						) : (
+							<p className="text-gray-500">
+								No product scheduled for this live.
+							</p>
+						)}
 					</div>
 				</div>
 			</div>
 
-			{/* Actions Section */}
-			<div className="action-section">
-				<button className="action-button" onClick={handleShowProduct}>
-					Show Product
-				</button>
+			{/* <div className="product-display my-6  w-[80vw]">
+				{showProduct && product && (
+					<div className="product-info bg-white shadow-lg rounded-lg flex items-center p-6 gap-6">
+						<img
+							src={product.image}
+							alt={product.name}
+							className="product-image w-32 h-32 object-cover rounded-lg border border-pink-200"
+						/>
+						<div className="product-details">
+							<h3 className="text-xl font-bold text-pink-600">
+								{product.name}
+							</h3>
+							<p className="text-gray-700">
+								{product.description}
+							</p>
+							<p className="product-price text-pink-500 font-bold">
+								${product.price}
+							</p>
+						</div>
+					</div>
+				)}
 			</div>
+
+			<div className="add-product-form bg-white shadow-lg rounded-lg p-6">
+				<h3 className="text-2xl font-bold text-pink-600 mb-4">
+					Add Product
+				</h3>
+				<div className="grid gap-4">
+					<input
+						type="text"
+						placeholder="Product Name"
+						className="px-4 py-2 border border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+						onChange={(e) =>
+							setProduct({ ...product, name: e.target.value })
+						}
+					/>
+					<input
+						type="text"
+						placeholder="Product Description"
+						className="px-4 py-2 border border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+						onChange={(e) =>
+							setProduct({
+								...product,
+								description: e.target.value,
+							})
+						}
+					/>
+					<input
+						type="number"
+						placeholder="Product Price"
+						className="px-4 py-2 border border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+						onChange={(e) =>
+							setProduct({ ...product, price: e.target.value })
+						}
+					/>
+					<input
+						type="text"
+						placeholder="Product Image URL"
+						className="px-4 py-2 border border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+						onChange={(e) =>
+							setProduct({ ...product, image: e.target.value })
+						}
+					/>
+					<button
+						className="px-4 py-2 bg-pink-400 text-white font-bold rounded-lg hover:bg-pink-500"
+						onClick={() => {
+							if (product.name && product.price) {
+								alert("Product Added");
+							} else {
+								alert("Please fill all fields");
+							}
+						}}
+					>
+						Add Product
+					</button>
+				</div>
+			</div>
+
+			<div className="action-section text-center mt-6">
+				<button
+					className="action-button px-6 py-2 bg-pink-600 text-white font-bold rounded-lg hover:bg-pink-700"
+					onClick={handleShowProduct}
+				>
+					{showProduct ? "Hide Product" : "Show Product"}
+				</button>
+			</div> */}
 		</div>
 	);
 };

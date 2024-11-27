@@ -1,5 +1,10 @@
 const express = require("express");
-const { YoutubeMetadata, ChatSend, ChatReceive } = require("./models");
+const {
+	YoutubeMetadata,
+	ChatSend,
+	ChatReceive,
+	LiveStreamSchedule,
+} = require("./models");
 const { Op } = require("sequelize");
 const expressAsyncHandler = require("express-async-handler");
 
@@ -32,6 +37,143 @@ class YoutubeRouter {
 					message: "Stream started successfully.",
 					data: newMetadata,
 				});
+			})
+		);
+
+		this.router.post(
+			"/set-live",
+			expressAsyncHandler(async (req, res) => {
+				const { url, startTimestamp, products } = req.body;
+				try {
+					await LiveStreamSchedule.create({
+						url,
+						startTimestamp,
+						products,
+					});
+					res.send({ success: true });
+				} catch (error) {
+					console.error("Error setting live:", error);
+					res.status(500).json({
+						success: false,
+						message: "Failed to setting live.",
+					});
+				}
+			})
+		);
+
+		this.router.post(
+			"/set-live-complete",
+			expressAsyncHandler(async (req, res) => {
+				const { id } = req.body;
+				try {
+					const live = await LiveStreamSchedule.findByPk(id);
+					if (!live) {
+						res.send({ success: false, message: "Live not found" });
+					}
+					await live.update({ isComplete: true });
+					res.send({ success: true });
+				} catch (error) {
+					console.error("Error setting live:", error);
+					res.status(500).json({
+						success: false,
+						message: "Failed to setting live.",
+					});
+				}
+			})
+		);
+
+		this.router.post(
+			"/delete-live",
+			expressAsyncHandler(async (req, res) => {
+				const { id } = req.body;
+				try {
+					await LiveStreamSchedule.destroy({
+						where: { id },
+					});
+					res.send({ success: true });
+				} catch (error) {
+					console.error("Error setting live:", error);
+					res.status(500).json({
+						success: false,
+						message: "Failed to setting live.",
+					});
+				}
+			})
+		);
+
+		this.router.post(
+			"/get-all-live",
+			expressAsyncHandler(async (req, res) => {
+				try {
+					const { currPage, limit } = req.body;
+
+					if (!currPage || !limit) {
+						return res.status(400).json({
+							success: false,
+							message: "Pagination parameters are required",
+						});
+					}
+
+					const offset = (currPage - 1) * limit;
+					const requests = await LiveStreamSchedule.findAndCountAll({
+						where: { isComplete: false },
+						limit: limit,
+						offset: offset,
+						order: [["createdAt", "DESC"]],
+					});
+
+					res.json({
+						success: true,
+						data: requests.rows,
+						total: requests.count,
+						currentPage: currPage,
+						totalPages: Math.ceil(requests.count / limit),
+					});
+				} catch (error) {
+					console.error("Error fetching all live:", error);
+					res.status(500).json({
+						success: false,
+						message: "An error occurred while fetching requests",
+					});
+				}
+			})
+		);
+
+		this.router.post(
+			"/get-all-live-complete",
+			expressAsyncHandler(async (req, res) => {
+				try {
+					const { currPage, limit } = req.body;
+
+					if (!currPage || !limit) {
+						return res.status(400).json({
+							success: false,
+							message: "Pagination parameters are required",
+						});
+					}
+
+					const offset = (currPage - 1) * limit;
+					const requests = await LiveStreamSchedule.findAndCountAll({
+						where: { isComplete: true },
+						limit: limit,
+						offset: offset,
+						order: [["createdAt", "DESC"]],
+					});
+
+					res.json({
+						success: true,
+						data: requests.rows,
+						total: requests.count,
+						currentPage: currPage,
+						totalPages: Math.ceil(requests.count / limit),
+					});
+				} catch (error) {
+					console.error("Error fetching all live:", error);
+					res.status(500).json({
+						success: false,
+						message: "An error occurred while fetching requests",
+					});
+				}
 			})
 		);
 
