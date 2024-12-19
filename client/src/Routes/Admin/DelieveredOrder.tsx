@@ -58,11 +58,11 @@ const DelieveredOrders = () => {
 			label: "VIEW",
 			onClick: (id, item) => openModal(item),
 		},
-		{
-			icon: faMessage,
-			className: "done-btn",
-			label: "MESSAGE",
-		},
+		// {
+		// 	icon: faMessage,
+		// 	className: "done-btn",
+		// 	label: "MESSAGE",
+		// },
 	];
 
 	const loadRequestData = async () => {

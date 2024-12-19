@@ -63,13 +63,13 @@ export default function Dashboard() {
 
 	return (
 		<div
-			className="absolute px-6 py-8 bg-gray-100 top-[60px] left-[320px] absolute"
+			className="absolute bg-gray-100 top-[60px] left-[320px] absolute"
 			style={{ width: "calc(100vw - 330px)" }}
 		>
 			<div className="dashboard-content grid grid-cols-1 lg:grid-cols-2 gap-8">
 				{/* Overview Section */}
 				<div className="dashboard-overview grid grid-cols-2 gap-6">
-					<div className="card bg-pink-100 shadow-md rounded-lg p-6 flex justify-between items-center">
+					<div className="card bg-pink-100 max-h-[200px] shadow-md rounded-lg p-6 flex justify-between items-center">
 						<div>
 							<h3 className="text-lg font-semibold text-pink-600">
 								Total Sales
@@ -83,7 +83,7 @@ export default function Dashboard() {
 						</div>
 					</div>
 
-					<div className="card bg-pink-100 shadow-md rounded-lg p-6 flex justify-between items-center">
+					<div className="card bg-pink-100 max-h-[200px] shadow-md rounded-lg p-6 flex justify-between items-center">
 						<div>
 							<h3 className="text-lg font-semibold text-pink-600">
 								Total Users
@@ -97,7 +97,7 @@ export default function Dashboard() {
 						</div>
 					</div>
 
-					<div className="card bg-pink-100 shadow-md rounded-lg p-6 flex justify-between items-center">
+					<div className="card bg-pink-100 max-h-[200px] shadow-md rounded-lg p-6 flex justify-between items-center">
 						<div>
 							<h3 className="text-lg font-semibold text-pink-600">
 								Total Products
@@ -111,7 +111,7 @@ export default function Dashboard() {
 						</div>
 					</div>
 
-					<div className="card bg-pink-100 shadow-md rounded-lg p-6 flex justify-between items-center">
+					<div className="card bg-pink-100 max-h-[200px] shadow-md rounded-lg p-6 flex justify-between items-center">
 						<div>
 							<h3 className="text-lg font-semibold text-pink-600">
 								Total Orders

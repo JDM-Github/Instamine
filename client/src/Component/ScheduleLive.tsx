@@ -26,6 +26,7 @@ const ScheduleLiveModal = ({ isOpen, onClose, products, reset }) => {
 				.map((product) => ({
 					id: product.id,
 					name: product.name,
+					product_image: product.product_image,
 					startTime: liveData.productSchedules[product.id]?.startTime,
 					endTime: liveData.productSchedules[product.id]?.endTime,
 				}))

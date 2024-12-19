@@ -4,6 +4,26 @@ import { useLocation } from "react-router-dom";
 import RequestHandler from "../../Functions/RequestHandler";
 import { toast } from "react-toastify";
 
+const timeToMinutes = (timeString) => {
+	const [hours, minutes] = timeString.split(":").map(Number);
+	return hours * 60 + minutes;
+};
+
+const isProductScheduled = (startTime, endTime) => {
+	const currentTime = new Date();
+	const currentMinutes =
+		currentTime.getHours() * 60 + currentTime.getMinutes();
+	const startMinutes = timeToMinutes(startTime);
+	const endMinutes = timeToMinutes(endTime);
+	return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+};
+
+interface Schedule {
+	id: string;
+	image: string;
+	name: string;
+	startTime: string;
+}
 const AdminLivestream = () => {
 	interface Chat {
 		id: string;
@@ -12,13 +32,16 @@ const AdminLivestream = () => {
 		message: string;
 	}
 	const { state } = useLocation();
+	const startStream = state?.startStream || false;
 	const streamUrl = state?.streamUrl || "";
 	const isStream = state?.isStream || false;
+	const products = state?.products || [];
 
 	const [isStreaming, setIsStreaming] = useState(isStream);
 	const [livestreamUrl, setLivestreamUrl] = useState(streamUrl);
 	const [chatMessages, setChatMessages] = useState<Chat[]>([]);
-	const [showProduct, setShowProduct] = useState(false);
+	const [scheduledProducts, setScheduledProducts] = useState<Schedule[]>([]);
+	const [allProducts, setAllProducts] = useState(products);
 
 	const fetchChatMessages = async () => {
 		if (isStreaming)
@@ -28,7 +51,6 @@ const AdminLivestream = () => {
 					"youtube/process-chat",
 					{}
 				);
-
 				if (data.success) {
 					setChatMessages((prevMessages) => {
 						const newMessages = data.messages.map((chat) => ({
@@ -43,7 +65,6 @@ const AdminLivestream = () => {
 							...prevMessages,
 							...newMessages,
 						];
-
 						return updatedMessages.length > 30
 							? updatedMessages.slice(updatedMessages.length - 30)
 							: updatedMessages;
@@ -52,11 +73,9 @@ const AdminLivestream = () => {
 					toast.error("Failed to fetch chat messages:");
 				}
 			} catch (error) {
-				toast.error("Error fetching chat messages:", error);
+				// toast.error("Error fetching chat messages:", error);
 			}
 	};
-
-	const displayProduct = async () => {};
 
 	const fetchYTUrl = async () => {
 		try {
@@ -69,6 +88,7 @@ const AdminLivestream = () => {
 				if (data.url !== null) {
 					setIsStreaming(true);
 					setLivestreamUrl(data.url);
+					setAllProducts(data.products);
 				}
 			} else {
 				toast.error("Failed to fetch chat messages:", data.message);
@@ -77,15 +97,43 @@ const AdminLivestream = () => {
 			toast.error("Error fetching chat messages:", error);
 		}
 	};
-	const [interval, setinterval] = useState<any>(null);
+	const [interval, setIntervalState] = useState<any>(null);
+
 	useEffect(() => {
-		fetchYTUrl();
+		if (!startStream && !isStreaming) fetchYTUrl();
+
 		if (isStreaming) {
 			fetchChatMessages();
-			setinterval(setInterval(fetchChatMessages, 8000));
+
+			if (!interval) {
+				const id = setInterval(fetchChatMessages, 8000);
+				setIntervalState(id);
+			}
+
 			return () => clearInterval(interval);
 		}
-	}, [isStreaming]);
+	}, [isStreaming, startStream]);
+
+	useEffect(() => {
+		if (
+			isStreaming &&
+			allProducts !== undefined &&
+			allProducts.length !== 0
+		) {
+			const activeProducts = allProducts.filter((product) =>
+				isProductScheduled(product.startTime, product.endTime)
+			);
+			setScheduledProducts(activeProducts);
+
+			const intervalId = setInterval(() => {
+				const activeProducts = allProducts.filter((product) =>
+					isProductScheduled(product.startTime, product.endTime)
+				);
+				setScheduledProducts(activeProducts);
+			}, 1000);
+			return () => clearInterval(intervalId);
+		}
+	}, [allProducts, isStreaming]);
 
 	const handleEndStream = async () => {
 		try {
@@ -111,7 +159,7 @@ const AdminLivestream = () => {
 				toast.success("You ended the stream.");
 			}
 		} catch (error) {
-			toast.error(`An error occurred while ending stream. ${error}`);
+			// toast.error(`An error occurred while ending stream. ${error}`);
 		}
 	};
 
@@ -126,6 +174,7 @@ const AdminLivestream = () => {
 				"youtube/start-stream",
 				{
 					url: livestreamUrl.trim(),
+					products: allProducts,
 				}
 			);
 			if (data.success === false) {
@@ -138,12 +187,8 @@ const AdminLivestream = () => {
 				toast.success("You started streaming...");
 			}
 		} catch (error) {
-			toast.error(`An error occurred while start streaming. ${error}`);
+			// toast.error(`An error occurred while start streaming. ${error}`);
 		}
-	};
-
-	const handleShowProduct = () => {
-		setShowProduct((prevState) => !prevState);
 	};
 
 	const getYouTubeVideoId = (url) => {
@@ -166,7 +211,6 @@ const AdminLivestream = () => {
 					src={`https://www.facebook.com/plugins/video.php?href=${src}&show_text=0&width=560`}
 					width="100%"
 					height="100%"
-					frameBorder="0"
 					style={{ border: "none", overflow: "hidden" }}
 					allow="encrypted-media"
 					allowFullScreen
@@ -212,11 +256,11 @@ const AdminLivestream = () => {
 	};
 
 	const scheduledProduct = {
-		name: "Pink Summer Dress",
-		image: "https://via.placeholder.com/150",
-		time: "2:00 PM",
-		price: 49.99,
-		description: "A beautiful summer dress perfect for any occasion.",
+		// name: "Pink Summer Dress",
+		// image: "https://via.placeholder.com/150",
+		// time: "2:00 PM",
+		// price: 49.99,
+		// description: "A beautiful summer dress perfect for any occasion.",
 	};
 
 	return (
@@ -234,17 +278,14 @@ const AdminLivestream = () => {
 						getSrc(livestreamUrl)
 					) : (
 						<div className="live-placeholder border-2 border-pink-300 border-dashed rounded-lg p-4 text-pink-500 flex-grow">
-							<p>
-								Enter a YouTube Livestream URL to start
-								streaming.
-							</p>
+							<p>Enter a Livestream URL to start streaming.</p>
 						</div>
 					)}
 					<div className="url-input-container flex mt-4 gap-4">
 						<input
 							type="text"
 							className="url-input flex-grow px-4 py-2 border border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 disabled:bg-gray-100"
-							placeholder="Enter YouTube Livestream URL"
+							placeholder="Enter Livestream URL"
 							value={livestreamUrl}
 							disabled={isStreaming}
 							onChange={(e) => setLivestreamUrl(e.target.value)}
@@ -300,36 +341,32 @@ const AdminLivestream = () => {
 					{/* Scheduled Product Section */}
 					<div className="scheduled-product mt-6">
 						<h2 className="text-xl font-semibold text-pink-500 mb-4">
-							Current Product Scheduled
+							Current Products Scheduled
 						</h2>
-						{scheduledProduct ? (
-							<div className="product-details flex items-start gap-4 bg-gray-50 shadow-md rounded-lg p-4">
-								<img
-									src={scheduledProduct.image}
-									alt={scheduledProduct.name}
-									className="w-24 h-24 rounded-lg object-cover"
-								/>
-								<div>
-									<h3 className="text-lg font-bold text-gray-800">
-										{scheduledProduct.name}
-									</h3>
-									<p className="text-gray-600">
-										Scheduled Time:{" "}
-										<span className="text-gray-800 font-semibold">
-											{scheduledProduct.time}
-										</span>
-									</p>
-									<p className="text-gray-600">
-										Price:{" "}
-										<span className="text-pink-600 font-bold">
-											${scheduledProduct.price}
-										</span>
-									</p>
-									<p className="text-gray-500 mt-2">
-										{scheduledProduct.description}
-									</p>
+						{scheduledProducts.length > 0 ? (
+							scheduledProducts.map((scheduledProduct) => (
+								<div
+									key={scheduledProduct.id}
+									className="product-details flex items-start gap-4 bg-gray-50 shadow-md rounded-lg p-4"
+								>
+									<img
+										src={scheduledProduct.image}
+										alt={scheduledProduct.name}
+										className="w-24 h-24 rounded-lg object-cover"
+									/>
+									<div>
+										<h3 className="text-lg font-bold text-gray-800">
+											{scheduledProduct.name}
+										</h3>
+										<p className="text-gray-600">
+											Scheduled Time:{" "}
+											<span className="text-gray-800 font-semibold">
+												{scheduledProduct.startTime}
+											</span>
+										</p>
+									</div>
 								</div>
-							</div>
+							))
 						) : (
 							<p className="text-gray-500">
 								No product scheduled for this live.

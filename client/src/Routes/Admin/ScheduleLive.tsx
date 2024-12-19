@@ -85,7 +85,12 @@ const ScheduleLivestream = () => {
 						);
 					} else {
 						navigate("/stream", {
-							state: { streamUrl: item.url, isStream: true },
+							state: {
+								startStream: true,
+								streamUrl: item.url,
+								isStream: true,
+								products: item.products,
+							},
 						});
 					}
 				} catch (error) {

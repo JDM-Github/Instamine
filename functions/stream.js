@@ -18,7 +18,7 @@ class YoutubeRouter {
 		this.router.post(
 			"/start-stream",
 			expressAsyncHandler(async (req, res) => {
-				const { url } = req.body;
+				const { url, products } = req.body;
 				if (!url) {
 					return res.status(400).json({
 						error: "URL are required",
@@ -28,7 +28,9 @@ class YoutubeRouter {
 				const newMetadata = await YoutubeMetadata.create({
 					video_id: url,
 					metadata: {},
+					products: products,
 				});
+				console.log(newMetadata);
 				await ChatSend.destroy({ where: {} });
 				await ChatReceive.destroy({ where: {} });
 
@@ -71,6 +73,22 @@ class YoutubeRouter {
 						res.send({ success: false, message: "Live not found" });
 					}
 					await live.update({ isComplete: true });
+
+					if (!live.url) {
+						return res.status(400).json({
+							error: "URL are required",
+						});
+					}
+					await YoutubeMetadata.destroy({ where: {} });
+					const newMetadata = await YoutubeMetadata.create({
+						video_id: live.url,
+						metadata: {},
+						products: live.products,
+					});
+					console.log(newMetadata);
+					await ChatSend.destroy({ where: {} });
+					await ChatReceive.destroy({ where: {} });
+
 					res.send({ success: true });
 				} catch (error) {
 					console.error("Error setting live:", error);
@@ -203,6 +221,7 @@ class YoutubeRouter {
 						success: false,
 						metadata: "",
 						url: "",
+						products: [],
 					});
 					return;
 				}
@@ -210,6 +229,7 @@ class YoutubeRouter {
 					success: true,
 					metadata: metadata.metadata,
 					url: metadata.video_id,
+					products: metadata.products,
 				});
 			})
 		);
@@ -226,6 +246,7 @@ class YoutubeRouter {
 				res.send({
 					success: true,
 					url: metadata.video_id,
+					products: metadata.products,
 				});
 			})
 		);

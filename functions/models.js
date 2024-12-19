@@ -2,7 +2,7 @@ require("dotenv").config();
 const pg = require("pg");
 const { Sequelize, DataTypes, INTEGER } = require("sequelize");
 const sequelize = new Sequelize(
-	"postgresql://jdm:gA00MXJG6XdxLl7tZvCuEA@jdm-master-15017.7tt.aws-us-east-1.cockroachlabs.cloud:26257/instamine?sslmode=verify-full",
+	"postgresql://zamren:CfaIi9mbm8bg1TM1c5QtHQ@instamine-cluster-1521.jxf.gcp-asia-southeast1.cockroachlabs.cloud:26257/instamine?sslmode=verify-full",
 	{
 		dialect: "postgres",
 		dialectModule: pg,
@@ -26,6 +26,10 @@ const YoutubeMetadata = sequelize.define("YoutubeMetadata", {
 	last_updated: {
 		type: DataTypes.DATE,
 		defaultValue: Sequelize.NOW,
+	},
+	products: {
+		type: DataTypes.JSON,
+		defaultValue: [],
 	},
 });
 

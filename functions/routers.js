@@ -14,12 +14,41 @@ const {
 	Notification,
 } = require("./models");
 const { isSeller } = require("./middleware");
+const sendEmail = require("./emailSender");
 
 const asyncHandler = require("express-async-handler");
 const { Op } = require("sequelize");
 const expressAsyncHandler = require("express-async-handler");
 
 // const JWT_SECRET = process.env.JWT_SECRET || "instamine";
+
+async function sendNotification(email, notificationMessage) {
+	if (!email || !notificationMessage) {
+		return false;
+	}
+	const emailSubject = "Important Notification from InstaMine";
+	const emailText = `You have a new notification from InstaMine: ${notificationMessage}`;
+	const formattedMessage = notificationMessage.replace(/\n/g, "<br>");
+	const emailHtml = `
+	<html>
+	<body>
+		<div style="text-align: center;">
+			<h1>InstaMine Business Notification</h1>
+			<p><strong>${formattedMessage}</strong></p>
+			<p>If you did not expect this notification, please ignore this message.</p>
+		</div>
+	</body>
+	</html>`;
+	sendEmail(email, emailSubject, emailText, emailHtml, (error, info) => {
+		if (error) {
+			console.log("Error sending notification:", error);
+			return false;
+		}
+		console.log("Notification sent successfully:", info);
+		return true;
+	});
+	return true;
+}
 
 async function addChatPartner(userId, partnerId) {
 	try {
@@ -234,7 +263,11 @@ class UserRoute {
 		this.router.post("/verify", asyncHandler(this.verifyAccount));
 		this.router.post("/seller", asyncHandler(this.becomeSeller));
 		this.router.post("/get_accounts", asyncHandler(this.getAllAccounts));
-
+		this.router.post("/updateUser", asyncHandler(this.updateUser));
+		this.router.post(
+			"/updateNotification",
+			asyncHandler(this.updateNotification)
+		);
 		this.router.get("/login", asyncHandler(this.loginUser));
 		this.router.post("/login", asyncHandler(this.loginUser));
 		this.router.post(
@@ -344,6 +377,71 @@ class UserRoute {
 		}
 	}
 
+	async updateNotification(req, res) {
+		const { notificationId } = req.body;
+		try {
+			const notif = await Notification.findByPk(notificationId);
+			if (!notif) {
+				return res.send({
+					success: true,
+					message: "Notification does not exists.",
+				});
+			}
+			await notif.update({
+				isRead: true,
+			});
+			return res.send({ success: true });
+		} catch (error) {
+			console.error(error);
+			return res.send({
+				message: "Error updating notification",
+				success: false,
+				error: error.message,
+			});
+		}
+	}
+
+	async updateUser(req, res) {
+		const {
+			profileImage,
+			firstName,
+			lastName,
+			email,
+			phoneNumber,
+			location,
+		} = req.body;
+
+		try {
+			const normalizedEmail = email.toLowerCase().trim();
+			const user = await User.findOne({
+				where: {
+					[Op.or]: [{ email: normalizedEmail }],
+				},
+			});
+			if (!user) {
+				return res.send({
+					success: true,
+					message: "User does not exists.",
+				});
+			}
+			await user.update({
+				firstName,
+				lastName,
+				email,
+				phoneNumber,
+				location,
+			});
+			return res.send({ success: true });
+		} catch (error) {
+			console.error(error);
+			return res.send({
+				message: "Error updating user",
+				success: false,
+				error: error.message,
+			});
+		}
+	}
+
 	async createUser(req, res) {
 		const {
 			firstName,
@@ -352,6 +450,7 @@ class UserRoute {
 			birthdate,
 			email,
 			password,
+			phoneNumber,
 			isSeller,
 			organizationName,
 		} = req.body;
@@ -380,6 +479,7 @@ class UserRoute {
 				username,
 				birthdate,
 				email,
+				phoneNumber,
 				password: hashedPassword,
 				isSeller: isSeller || false,
 				organizationName: isSeller ? organizationName : null,
@@ -602,6 +702,7 @@ class ProductRoute {
 			"/getAllReview",
 			expressAsyncHandler(this.getAllReview)
 		);
+		this.router.post("/getProduct", expressAsyncHandler(this.getProduct));
 	}
 
 	async getAllProduct(req, res) {
@@ -619,6 +720,23 @@ class ProductRoute {
 			return res.send({
 				success: false,
 				message: "Error creating product",
+				error: error.message,
+			});
+		}
+	}
+
+	async getProduct(req, res) {
+		try {
+			const { id } = req.body;
+			const allProducts = await Product.findByPk(id);
+			return res.send({
+				success: true,
+				product: allProducts,
+			});
+		} catch (error) {
+			return res.send({
+				success: false,
+				message: "Error getting product",
 				error: error.message,
 			});
 		}
@@ -755,6 +873,7 @@ class ProductRoute {
 
 	async getAllProducts(req, res) {
 		const { category, search, email } = req.query;
+		console.log(search);
 
 		try {
 			let query = {
@@ -795,6 +914,8 @@ class ProductRoute {
 			if (email) {
 				query.include[0].where.email = email;
 			}
+
+			console.log(query);
 
 			const products = await Product.findAll(query);
 
@@ -912,10 +1033,48 @@ class OrderRouter {
 		try {
 			const { id } = req.body;
 			const order = await OrderBatch.findByPk(id);
-			await order.update({ toRecieve: false, isComplete: true });
-			res.send({ success: true, order });
+
+			if (!order) {
+				return res
+					.status(404)
+					.send({ success: false, message: "Order not found." });
+			}
+
+			const userId = order.userId;
+			const user = await User.findByPk(userId);
+
+			if (!user || !user.email) {
+				return res.status(400).send({
+					success: false,
+					message: "User not found or missing email.",
+				});
+			}
+
+			await order.update({
+				toRecieve: false,
+				isComplete: true,
+			});
+
+			await Notification.create({
+				userId: userId,
+				title: "Order Completed",
+				description: `Your order with ID ${id} has been marked as complete. Thank you for your purchase!`,
+				isRead: false,
+			});
+
+			sendNotification(
+				user.email,
+				"Your order is complete",
+				`Your order with ID ${id} has been marked as complete. Thank you for your purchase!`
+			);
+
+			res.send({
+				success: true,
+				message: "Order completed and notification sent.",
+				order,
+			});
 		} catch (error) {
-			res.send({ success: false, message: error.message });
+			res.status(500).send({ success: false, message: error.message });
 		}
 	}
 
@@ -951,12 +1110,16 @@ class OrderRouter {
 				});
 			}
 
-			if (product.stock < numberOfProduct) {
+			if (product.number_of_stock < numberOfProduct) {
 				return res.status(400).send({
 					success: false,
 					message: `Insufficient stock. Only ${product.stock} items left.`,
 				});
 			}
+
+			await product.update({
+				number_of_stock: product.number_of_stock - numberOfProduct,
+			});
 
 			const newOrder = await Order.create({
 				productId,
@@ -984,7 +1147,18 @@ class OrderRouter {
 				discountFee,
 				subTotalFee,
 				isPaid,
+				email,
+				notificationMessage,
 			} = req.body;
+
+			const result = await sendNotification(email, notificationMessage);
+			if (!result) {
+				res.send({
+					success: false,
+					message: "Email sent unsuccessfully. Order is cancelled.",
+				});
+			}
+
 			const totalFee = subTotalFee + shoppingFee - discountFee;
 			const orderBatch = await OrderBatch.create({
 				products: products,
@@ -1009,6 +1183,12 @@ class OrderRouter {
 					)
 					.map((item) => item.destroy())
 			);
+			await Notification.create({
+				userId: userId,
+				title: "Order Placed Successfully",
+				description: `Your order has been placed successfully with a total of ₱${totalFee}. You will be notified once it is ready to ship.`,
+			});
+
 			res.send({ success: true, orderBatch });
 		} catch (error) {
 			res.send({ success: false, message: error.message });
@@ -1019,8 +1199,46 @@ class OrderRouter {
 		try {
 			const { id } = req.body;
 			const order = await OrderBatch.findByPk(id);
-			await order.update({ toShip: false, toRecieve: true });
-			res.send({ success: true });
+
+			if (!order) {
+				return res
+					.status(404)
+					.send({ success: false, message: "Order not found." });
+			}
+
+			const userId = order.userId;
+			const user = await User.findByPk(userId);
+
+			if (!user || !user.email) {
+				return res.status(400).send({
+					success: false,
+					message: "User not found or missing email.",
+				});
+			}
+
+			await order.update({
+				toShip: false,
+				toRecieve: true,
+				orderPaid: true,
+			});
+
+			await Notification.create({
+				userId: userId,
+				title: "Order Delivered",
+				description: `Your order with ID ${id} has been marked as delivered and is ready for you to receive.`,
+				isRead: false,
+			});
+
+			sendNotification(
+				user.email,
+				"Your order has been delivered",
+				`Your order with ID ${id} has been marked as delivered and is ready for you to receive.`
+			);
+
+			res.send({
+				success: true,
+				message: "Order delivered and notification sent.",
+			});
 		} catch (error) {
 			res.status(500).send({ success: false, message: error.message });
 		}
@@ -1160,17 +1378,17 @@ class OrderRouter {
 		}
 	}
 
-	async cancelOrder(req, res) {
-		try {
-			const { id } = req.body;
+	// async cancelOrder(req, res) {
+	// 	try {
+	// 		const { id } = req.body;
 
-			const order = await Order.findByPk(id);
-			await order.destroy();
-			res.send({ success: true });
-		} catch (error) {
-			res.send({ success: false, message: error.message });
-		}
-	}
+	// 		const order = await Order.findByPk(id);
+	// 		await order.destroy();
+	// 		res.send({ success: true });
+	// 	} catch (error) {
+	// 		res.send({ success: false, message: error.message });
+	// 	}
+	// }
 
 	async getAllBatchOrderTabulator(req, res) {
 		try {
@@ -1280,18 +1498,10 @@ class OrderRouter {
 
 	async getAllOrderRevenue(req, res) {
 		try {
-			const allOrders = await Order.findAll({
+			const allOrders = await OrderBatch.findAll({
 				where: {
-					sellerId: "1",
-					isComplete: true,
+					orderPaid: true,
 				},
-				include: [
-					{
-						model: Product,
-						as: "Product",
-						attributes: ["id", "name", "price"],
-					},
-				],
 			});
 
 			let totalRevenue = 0;
@@ -1313,22 +1523,19 @@ class OrderRouter {
 			}
 
 			allOrders.forEach((order) => {
-				const product = order.Product;
-				if (!product) return;
-
-				const productPrice = parseFloat(product.price || 0);
-				const orderQuantity = order.quantity || 1;
-				const orderRevenue = productPrice * orderQuantity;
+				const products = order.products || [];
+				const orderRevenue = parseFloat(order.totalFee || 0);
 				totalRevenue += orderRevenue;
 
-				if (productCountMap[product.id]) {
+				products.forEach((product) => {
+					if (!productCountMap[product.id]) {
+						productCountMap[product.id] = {
+							name: product.name,
+							count: 0,
+						};
+					}
 					productCountMap[product.id].count += 1;
-				} else {
-					productCountMap[product.id] = {
-						name: product.name,
-						count: 1,
-					};
-				}
+				});
 
 				const orderDate = new Date(order.createdAt);
 				const orderMonth = `${orderDate.getFullYear()}-${(
@@ -1336,9 +1543,8 @@ class OrderRouter {
 				)
 					.toString()
 					.padStart(2, "0")}`;
-
 				if (monthlySalesMap[orderMonth]) {
-					monthlySalesMap[orderMonth].totalSales += orderQuantity;
+					monthlySalesMap[orderMonth].totalSales += products.length;
 					monthlySalesMap[orderMonth].revenue += orderRevenue;
 				}
 			});
@@ -1424,6 +1630,34 @@ class OrderRouter {
 		}
 	}
 
+	async cancelOrder(req, res) {
+		try {
+			const { orderId, user } = req.body;
+			const order = await OrderBatch.findByPk(orderId);
+			if (!order) {
+				return res.send({
+					success: false,
+					message: "Order does not exist.",
+				});
+			}
+			await order.destroy();
+			const notification = await Notification.create({
+				userId: user.id,
+				title: "Order Canceled",
+				description: `Your order with ID ${orderId} has been canceled successfully.`,
+				isRead: false,
+			});
+
+			res.send({
+				success: true,
+				message: "Order canceled and notification sent.",
+				notification: notification,
+			});
+		} catch (error) {
+			res.send({ success: false, message: error.message });
+		}
+	}
+
 	async addTrackingInfo(req, res) {
 		try {
 			const { trackInfo } = req.body;
@@ -1462,6 +1696,11 @@ class CartProduct {
 			"/getAllCartById",
 			expressAsyncHandler(this.getAllCartById)
 		);
+		this.router.post("/updateCart", expressAsyncHandler(this.updateCart));
+		this.router.post(
+			"/updateCartQuantity",
+			expressAsyncHandler(this.updateCartQuantity)
+		);
 	}
 
 	// async getAllOrders(req, res) {
@@ -1481,24 +1720,97 @@ class CartProduct {
 	// 	}
 	// }
 
+	async updateCartQuantity(req, res) {
+		try {
+			const { cartId, quantity } = req.body;
+			const cart = await Cart.findByPk(cartId);
+			if (!cart) {
+				res.send({
+					success: false,
+					message: "Cart does not exists",
+				});
+			}
+			await cart.update({ numberOfCart: parseInt(quantity) });
+
+			res.send({
+				success: true,
+				message: "Cart items successfully updated.",
+			});
+		} catch (error) {
+			res.send({
+				success: false,
+				message: error.message,
+			});
+		}
+	}
+
+	async updateCart(req, res) {
+		try {
+			const { cartIds } = req.body;
+			console.log(cartIds);
+
+			if (!cartIds || !Array.isArray(cartIds)) {
+				return res.status(400).send({
+					success: false,
+					message: "Invalid cartIds provided.",
+				});
+			}
+			await Cart.destroy({
+				where: {
+					id: {
+						[Op.in]: cartIds,
+					},
+				},
+			});
+			res.send({
+				success: true,
+				message: "Cart items successfully removed.",
+			});
+		} catch (error) {
+			res.send({
+				success: false,
+				message: error.message,
+			});
+		}
+	}
+
 	async createCart(req, res) {
 		try {
 			const { productId, userId } = req.body;
+			const product = await Product.findOne({ where: { id: productId } });
+			if (!product) {
+				return res.send({
+					success: false,
+					message: "Product not found.",
+				});
+			}
+
+			if (product.number_of_stock <= 0) {
+				return res.send({
+					success: false,
+					message: "Sorry, this product is out of stock.",
+				});
+			}
+			// await product.update({number_of_stock: product.number_of_stock - 1})
 			let cart = await Cart.findOne({
 				where: { productId, userId },
 			});
 			if (cart) {
-				res.send({
+				return res.send({
 					success: false,
 					message: "The product is already in the cart.",
 				});
-				return;
 			}
 			const newCart = await Cart.create({
 				productId,
 				userId,
 			});
-			res.send({ success: true, newCart });
+
+			res.send({
+				success: true,
+				newCart,
+				message: "Product added to the cart successfully.",
+			});
 		} catch (error) {
 			res.send({ success: false, message: error.message });
 		}

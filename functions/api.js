@@ -18,7 +18,7 @@ const {
 } = require("./routers");
 const { youtubeRouter } = require("./stream.js");
 
-DEVELOPMENT = true;
+DEVELOPMENT = false;
 if (DEVELOPMENT) {
 	app.use(
 		cors({
@@ -89,22 +89,111 @@ router.post("/send-email", (req, res) => {
 	});
 });
 
+router.post("/send-notification", (req, res) => {
+	const { email, notificationMessage } = req.body;
+	if (!email || !notificationMessage) {
+		return res.status(400).json({
+			success: false,
+			message: "Recipient email and notification message are required.",
+		});
+	}
+	const emailSubject = "Important Notification from InstaMine";
+	const emailText = `You have a new notification from InstaMine: ${notificationMessage}`;
+	const formattedMessage = notificationMessage.replace(/\n/g, "<br>");
+	const emailHtml = `
+		<html>
+		<body>
+			<div style="text-align: center;">
+				<h1>InstaMine Business Notification</h1>
+				<p><strong>${formattedMessage}</strong></p>
+				<p>If you did not expect this notification, please ignore this message.</p>
+			</div>
+		</body>
+		</html>`;
+	sendEmail(email, emailSubject, emailText, emailHtml, (error, info) => {
+		if (error) {
+			console.log("Error sending notification:", error);
+			return res.status(500).json({
+				success: false,
+				message: "Failed to send notification.",
+				error: error.message,
+			});
+		}
+
+		console.log("Notification sent successfully:", info);
+		return res.status(200).json({
+			success: true,
+			message: "Notification sent successfully.",
+			info: info.messageId,
+		});
+	});
+});
+
+// router.post("/send-confirmation", (req, res) => {
+// 	const { email, notificationMessage, confirmationPin } = req.body;
+// 	if (!email || !notificationMessage || !confirmationPin) {
+// 		return res.status(400).json({
+// 			success: false,
+// 			message: "Recipient email, confirmation pin and notification message are required.",
+// 		});
+// 	}
+// 	const emailSubject = "Important Notification from InstaMine";
+// 	const emailText = `You have a new notification from InstaMine: ${notificationMessage}`;
+// 	const formattedMessage = notificationMessage.replace(/\n/g, "<br>");
+// 	const emailHtml = `
+// 		<html>
+// 		<body>
+// 			<div style="text-align: center;">
+// 				<h1>InstaMine Business Notification</h1>
+// 				<p><strong>${formattedMessage}</strong></p>
+// 				<p>If you did not expect this notification, please ignore this message.</p>
+// 			</div>
+// 		</body>
+// 		</html>`;
+// 	sendEmail(email, emailSubject, emailText, emailHtml, (error, info) => {
+// 		if (error) {
+// 			console.log("Error sending notification:", error);
+// 			return res.status(500).json({
+// 				success: false,
+// 				message: "Failed to send notification.",
+// 				error: error.message,
+// 			});
+// 		}
+
+// 		console.log("Notification sent successfully:", info);
+// 		return res.status(200).json({
+// 			success: true,
+// 			message: "Notification sent successfully.",
+// 			info: info.messageId,
+// 		});
+// 	});
+// });
+
+// send - confirmation;
+
 const PAYMONGO_API_KEY = "sk_test_PoK58FtMrQaHHc2EyguAKYwj";
 router.post("/create-payment", async (req, res) => {
-	const { amount, description } = req.body;
+	const { amount, description, walletType } = req.body;
+
+	const validWalletTypes = ["gcash", "paymaya"];
+	if (!validWalletTypes.includes(walletType)) {
+		return res.status(400).json({ error: "Invalid wallet type" });
+	}
+
 	try {
 		const sourceResponse = await axios.post(
 			"https://api.paymongo.com/v1/sources",
 			{
 				data: {
 					attributes: {
-						amount: amount * 100,
+						amount: Math.min(100, amount * 100),
 						currency: "PHP",
-						type: "gcash",
+						type: walletType,
 						redirect: {
 							success: "https://yourdomain.com/payment-success",
 							failed: "https://yourdomain.com/payment-failed",
 						},
+						description: description,
 					},
 				},
 			},
@@ -117,11 +206,14 @@ router.post("/create-payment", async (req, res) => {
 				},
 			}
 		);
-		const gcashSource = sourceResponse.data.data;
-		res.json({ redirectUrl: gcashSource.attributes.redirect.checkout_url });
+
+		const paymentSource = sourceResponse.data.data;
+		res.json({
+			redirectUrl: paymentSource.attributes.redirect.checkout_url,
+		});
 	} catch (error) {
 		console.error("Error creating payment:", error);
-		res.status(500).json({ error: "Failed to create GCash payment" });
+		res.status(500).json({ error: "Failed to create payment" });
 	}
 });
 
