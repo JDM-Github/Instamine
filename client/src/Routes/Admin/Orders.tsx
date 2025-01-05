@@ -15,10 +15,13 @@ import OrderDetailsModal from "../../Component/OrderDetails.tsx";
 const headers = [
 	"Order ID",
 	"Customer ID",
+	"Customer Fullname",
+	"Customer Email",
 	"Is Paid",
-	"Subtotal",
-	"Discount",
-	"Shipping Fee",
+	"Reference Number",
+	// "Subtotal",
+	// "Discount",
+	// "Shipping Fee",
 	"Total",
 	"Created At",
 	"Actions",
@@ -28,16 +31,19 @@ const renderRow = (item) => (
 	<>
 		<td>{item.id}</td>
 		<td>{item.userId}</td>
+		<td>{item.User.firstName + " " + item.User.lastName}</td>
+		<td>{item.User.email}</td>
 		<td>{item.orderPaid ? "YES" : "NO"}</td>
-		<td>{item.subTotalFee}</td>
+		<td>{item.referenceNumber}</td>
+		{/* <td>{item.subTotalFee}</td>
 		<td>{item.discountFee}</td>
-		<td>{item.shoppingFee}</td>
+		<td>{item.shoppingFee}</td> */}
 		<td>{item.totalFee}</td>
 		<td>{item.createdAt.split("T")[0]}</td>
 	</>
 );
 
-const Orders = () => {
+const Orders = ({ setOpenModal, setSelectedUser }) => {
 	const [requestData, setRequestData] = useState([]);
 	const [currPage, setCurrPage] = useState(1);
 	const [total, setTotal] = useState(0);
@@ -69,14 +75,37 @@ const Orders = () => {
 			className: "delete-btn",
 			label: "DECLINE",
 			onConditionLabel: (item) => item.toShip,
+			onClick: (id, item) => declineOrder(item),
 		},
 		{
 			icon: faMessage,
-			className: "delete-btn",
+			className: "done-btn",
 			label: "MESSAGE",
 			onConditionLabel: (item) => item.toShip,
+			onClick: (id, item) => loadChatModal(item),
 		},
 	];
+
+	const loadChatModal = async (item) => {
+		try {
+			const data = await RequestHandler.handleRequest(
+				"post",
+				"chats/get-user-chat",
+				{ userId: "1", partnerId: item.userId }
+			);
+			if (data.success === false) {
+				toast.error(
+					data.message ||
+						"Error occurred. Please check your credentials."
+				);
+			} else {
+				setOpenModal(true);
+				setSelectedUser(data.chat);
+			}
+		} catch (error) {
+			toast.error(`An error occurred while requesting data. ${error}`);
+		}
+	};
 
 	const shipOrder = async (id) => {
 		try {
@@ -92,6 +121,27 @@ const Orders = () => {
 				);
 			} else {
 				toast.success(data.message || "Order delievered successfully!");
+				loadRequestData();
+			}
+		} catch (error) {
+			toast.error(`An error occurred while requesting data. ${error}`);
+		}
+	};
+
+	const declineOrder = async (item) => {
+		try {
+			const data = await RequestHandler.handleRequest(
+				"post",
+				"orders/declineOrder",
+				{ orderId: item.id, userId: item.userId }
+			);
+			if (data.success === false) {
+				toast.error(
+					data.message ||
+						"Error declining the order. Please check your credentials."
+				);
+			} else {
+				toast.success(data.message || "Order declined successfully!");
 				loadRequestData();
 			}
 		} catch (error) {
@@ -143,6 +193,7 @@ const Orders = () => {
 					setCurrentPage={setCurrPage}
 					itemsPerPage={limit}
 					total={total}
+					searchableHeaders={["id"]}
 				/>
 			</div>
 			<OrderDetailsModal

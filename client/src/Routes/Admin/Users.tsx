@@ -4,8 +4,10 @@ import {
 	faArchive,
 	faCheck,
 	faCheckCircle,
+	faComments,
 	faEye,
 	faLock,
+	faMessage,
 	faPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import RequestHandler from "../../Functions/RequestHandler.js";
@@ -32,7 +34,7 @@ const renderRow = (item) => (
 	</>
 );
 
-const Users = () => {
+const Users = ({ setOpenModal, setSelectedUser }) => {
 	const [isArchived, setIsArchived] = useState<boolean | null>(false);
 	const [requestData, setRequestData] = useState([]);
 	const [currPage, setCurrPage] = useState(1);
@@ -51,7 +53,6 @@ const Users = () => {
 		{
 			placeholder: "ACTIVE",
 			options: [
-				// { value: "all", label: "ALL", icon: faAsterisk },
 				{ value: "unarchived", label: "ACTIVE", icon: faCheckCircle },
 				{ value: "archived", label: "LOCKED", icon: faArchive },
 			],
@@ -76,7 +77,34 @@ const Users = () => {
 			onConditionLabel: (item) => item.isArchived,
 			onClick: (id) => archiveAccount(id),
 		},
+		{
+			icon: faMessage,
+			className: "done-btn",
+			label: "MESSAGE",
+			onClick: (id, item) => loadChatModal(item),
+		},
 	];
+
+	const loadChatModal = async (item) => {
+		try {
+			const data = await RequestHandler.handleRequest(
+				"post",
+				"chats/get-user-chat",
+				{ userId: "1", partnerId: item.id }
+			);
+			if (data.success === false) {
+				toast.error(
+					data.message ||
+						"Error occurred. Please check your credentials."
+				);
+			} else {
+				setOpenModal(true);
+				setSelectedUser(data.chat);
+			}
+		} catch (error) {
+			toast.error(`An error occurred while requesting data. ${error}`);
+		}
+	};
 
 	const loadRequestData = async () => {
 		try {
@@ -137,6 +165,13 @@ const Users = () => {
 					setCurrentPage={setCurrPage}
 					itemsPerPage={limit}
 					total={total}
+					searchableHeaders={[
+						"id",
+						"firstName",
+						"lastName",
+						"email",
+						"phoneNumber",
+					]}
 				/>
 			</div>
 			<UserDetailsModal

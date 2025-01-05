@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 
 class RequestHandler {
-	static async handleRequest(method, link, requestData = {}) {
-		const development = true;
+	static async handleRequest(method, link, requestData = {}, headers = {}) {
+		const development = false;
 		const baseURL = development
 			? "http://localhost:8888"
 			: "https://instantmine.netlify.app";
@@ -18,7 +18,8 @@ class RequestHandler {
 
 		return await axiosMethod(
 			baseURL + "/.netlify/functions/api/" + link,
-			requestData
+			requestData,
+			headers
 		)
 			.then((response) => {
 				return response.data;

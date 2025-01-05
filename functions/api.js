@@ -8,15 +8,17 @@ const bodyParser = require("body-parser");
 const app = express();
 const router = express.Router();
 const sendEmail = require("./emailSender");
-const { sequelize } = require("./models");
+const { sequelize, OrderBatch } = require("./models");
 const {
 	userRouter,
 	productRouter,
 	chatRouter,
 	orderRouter,
 	cartRouter,
+	imageRouter,
 } = require("./routers");
 const { youtubeRouter } = require("./stream.js");
+const { INTEGER } = require("sequelize");
 
 DEVELOPMENT = false;
 if (DEVELOPMENT) {
@@ -34,6 +36,7 @@ if (DEVELOPMENT) {
 	app.use(cors());
 }
 
+router.use("/file", imageRouter);
 router.use("/user", userRouter);
 router.use("/chats", chatRouter);
 router.use("/product", productRouter);
@@ -171,32 +174,84 @@ router.post("/send-notification", (req, res) => {
 
 // send - confirmation;
 
-const PAYMONGO_API_KEY = "sk_test_PoK58FtMrQaHHc2EyguAKYwj";
-router.post("/create-payment", async (req, res) => {
-	const { amount, description, walletType } = req.body;
+const generateReferenceNumber = () => {
+	const timestamp = Date.now().toString();
+	const randomString = Math.random()
+		.toString(36)
+		.substring(2, 8)
+		.toUpperCase();
+	return `REF-${timestamp}-${randomString}`;
+};
 
-	const validWalletTypes = ["gcash", "paymaya"];
-	if (!validWalletTypes.includes(walletType)) {
-		return res.status(400).json({ error: "Invalid wallet type" });
-	}
+const PAYMONGO_API_KEY = "sk_test_xQUPaznwdL8WkBfuLA5p3ihK";
+router.post("/create-payment", async (req, res) => {
+	const { amount, description, walletType, products, users, order } =
+		req.body;
+
+	console.log(products);
+	console.log(users);
+	console.log(order);
+
+
+	const adjustedLineItems = products.map((item) => {
+		return {
+			currency: "PHP",
+			images: [item.productImage],
+			amount: parseInt(item.price * 100),
+			name: item.name,
+			quantity: item.numberOfProduct,
+			description: "Full payment for this product",
+		};
+	});
+
+	const referenceNumber = generateReferenceNumber();
+
+	const payload = {
+		data: {
+			attributes: {
+				billing: {
+					address: {
+						line1: users.location,
+						country: "PH",
+					},
+					name: users.firstName + " " + users.lastName + " ",
+					email: users.email,
+					phone: users.phoneNumber,
+				},
+				send_email_receipt: true,
+				show_description: true,
+				show_line_items: true,
+				payment_method_types: [
+					// "qrph",
+					// "billease",
+					// "card",
+					// "dob",
+					// "dob_ubp",
+					// "brankas_bdo",
+					"gcash",
+					// "brankas_landbank",
+					// "brankas_metrobank",
+					// "grab_pay",
+					// "paymaya",
+				],
+				line_items: adjustedLineItems,
+				description: "Payment for selected products",
+				reference_number: referenceNumber,
+				statement_descriptor: "Petal and Planes",
+				success_url: "https://yourdomain.com/payment-success",
+				cancel_url: "https://yourdomain.com/payment-failed",
+			},
+		},
+	};
+
+	const jsonPayload = JSON.stringify(payload);
+	console.log(jsonPayload);
+
 
 	try {
 		const sourceResponse = await axios.post(
-			"https://api.paymongo.com/v1/sources",
-			{
-				data: {
-					attributes: {
-						amount: Math.min(100, amount * 100),
-						currency: "PHP",
-						type: walletType,
-						redirect: {
-							success: "https://yourdomain.com/payment-success",
-							failed: "https://yourdomain.com/payment-failed",
-						},
-						description: description,
-					},
-				},
-			},
+			"https://api.paymongo.com/v1/checkout_sessions",
+			payload,
 			{
 				headers: {
 					Authorization: `Basic ${Buffer.from(
@@ -206,10 +261,13 @@ router.post("/create-payment", async (req, res) => {
 				},
 			}
 		);
-
 		const paymentSource = sourceResponse.data.data;
+		await OrderBatch.update(
+			{ referenceNumber, paymentLink: paymentSource.attributes.checkout_url },
+			{ where: { id: order.id } }
+		);
 		res.json({
-			redirectUrl: paymentSource.attributes.redirect.checkout_url,
+			redirectUrl: paymentSource.attributes.checkout_url,
 		});
 	} catch (error) {
 		console.error("Error creating payment:", error);

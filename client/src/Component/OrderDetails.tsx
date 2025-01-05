@@ -115,7 +115,7 @@ const OrderDetailsModal = ({ isOpen, onClose, order }) => {
 									{order.orderPaid ? "Yes" : "No"}
 								</span>
 							</p>
-							<p className="text-sm text-gray-700">
+							{/* <p className="text-sm text-gray-700">
 								<strong>Subtotal Fee:</strong> ₱
 								{order.subTotalFee}
 							</p>
@@ -126,7 +126,7 @@ const OrderDetailsModal = ({ isOpen, onClose, order }) => {
 							<p className="text-sm text-gray-700">
 								<strong>Shipping Fee:</strong> ₱
 								{order.shoppingFee}
-							</p>
+							</p> */}
 							<p className="text-sm text-gray-700">
 								<strong>Total Fee:</strong> ₱{order.totalFee}
 							</p>

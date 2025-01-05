@@ -29,7 +29,7 @@ const ProductList: React.FC = () => {
 	const [loading, setloading] = useState(false);
 	const [isArchived, setIsArchived] = useState(false);
 	const [productsData, setProductsData] = useState<Product[]>([]);
-	const [allReview, setReview] = useState<[] | null>(null);
+	const [allReview, setReview] = useState<any>(null);
 
 	const loadRequestData = async () => {
 		try {
@@ -45,6 +45,15 @@ const ProductList: React.FC = () => {
 				);
 			} else {
 				setProductsData(data.products);
+
+				// alert(JSON.stringify(data.products));
+				for (const product of data.products)
+				{
+					if (product.number_of_stock <= 50)
+					{
+						toast.info(`Low stock product ${product.name}`);
+					}
+				}
 			}
 		} catch (error) {
 			toast.error(`An	error occurred while requesting	data. ${error}`);
@@ -65,21 +74,14 @@ const ProductList: React.FC = () => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editData, setEditData] = useState<Product | null>(null);
 	const [addData, setAddData] = useState<AddData | null>(null);
-	const [mainImagePreview, setMainImagePreview] = useState<string | null>(
-		null
+	const [mainImagePreview, setMainImagePreview] = useState<any>(null);
+	const [additionalImagesPreview, setAdditionalImagesPreview] = useState<any>(
+		[]
 	);
-	const [additionalImagesPreview, setAdditionalImagesPreview] = useState<
-		string[]
-	>([]);
 
 	const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
-		if (file) {
-			const reader = new FileReader();
-			reader.onloadend = () =>
-				setMainImagePreview(reader.result as string);
-			reader.readAsDataURL(file);
-		}
+		setMainImagePreview(file);
 	};
 
 	const handleAdditionalImagesChange = (
@@ -90,20 +92,11 @@ const ProductList: React.FC = () => {
 			alert("You can only	upload up to 5 images.");
 			return;
 		}
-
 		const newImages = files.slice(0, 5 - additionalImagesPreview.length);
-		const updatedImages = [...additionalImagesPreview];
-
-		newImages.forEach((file) => {
-			const reader = new FileReader();
-			reader.onloadend = () => {
-				if (updatedImages.length < 5) {
-					updatedImages.push(reader.result as string);
-					setAdditionalImagesPreview([...updatedImages]);
-				}
-			};
-			reader.readAsDataURL(file);
-		});
+		setAdditionalImagesPreview((prevImages) => [
+			...prevImages,
+			...newImages,
+		]);
 	};
 
 	const handleRemoveImage = (index: number) => {
@@ -142,6 +135,7 @@ const ProductList: React.FC = () => {
 		);
 		if (product.product_images && product.product_images.length > 0)
 			setAdditionalImagesPreview(product.product_images.slice(0, 5));
+		else setAdditionalImagesPreview([]);
 		setIsModalOpen(true);
 		setloading(false);
 	};
@@ -179,6 +173,75 @@ const ProductList: React.FC = () => {
 
 	const saveProduct = async (productData) => {
 		setloading(true);
+		let imageUrls: any = [];
+		const uploadImagePromises = additionalImagesPreview.map(
+			async (image) => {
+				if (!(image instanceof File)) {
+					imageUrls.push(image);
+					return;
+				}
+				const formData = new FormData();
+				formData.append("file", image);
+
+				try {
+					const imageUploadData: any =
+						await RequestHandler.handleRequest(
+							"post",
+							"file/upload-image",
+							formData,
+							{
+								headers: {
+									"Content-Type": "multipart/form-data",
+								},
+							}
+						);
+					if (imageUploadData.success) {
+						imageUrls.push(imageUploadData.uploadedDocument);
+					} else {
+						toast.error(
+							imageUploadData.message || "Image upload failed"
+						);
+					}
+				} catch (error) {
+					console.error("Error uploading the image:", error);
+					toast.error("Error uploading one or more images.");
+				}
+			}
+		);
+
+		let imageUrl = "";
+		if (mainImagePreview instanceof File) {
+			const formData = new FormData();
+			formData.append("file", mainImagePreview);
+			try {
+				const imageUploadData: any = await RequestHandler.handleRequest(
+					"post",
+					"file/upload-image",
+					formData,
+					{
+						headers: {
+							"Content-Type": "multipart/form-data",
+						},
+					}
+				);
+				if (imageUploadData.success) {
+					imageUrl = imageUploadData.uploadedDocument;
+				} else {
+					toast.error(
+						imageUploadData.message || "Image upload failed"
+					);
+				}
+			} catch (error) {
+				console.error("Error uploading the image:", error);
+				toast.error("Error uploading one or more images.");
+			}
+		} else {
+			imageUrl = mainImagePreview;
+		}
+		await Promise.all(uploadImagePromises);
+		productData.product_images = imageUrls;
+		productData.product_image = imageUrl;
+
 		try {
 			const data = await RequestHandler.handleRequest(
 				"post",
@@ -279,12 +342,12 @@ const ProductList: React.FC = () => {
 				{isArchived ? "ARCHIVED" : "ACTIVE"}
 			</button>
 
-			<div className="product-list mt-6 top-[60px] left-[320px] absolute">
-				<div className="product-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4	gap-6">
+			<div className="product-list mt-4 absolute top-[60px] left-[320px]">
+				<div className="product-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 max-w-[calc(100vw-340px)] min-w-[calc(100vw-340px)]">
 					{!isArchived && (
 						<div className="fixed top-4 right-4 z-50">
 							<div
-								className="w-14 h-14 bg-gray-500 rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-gray-600 transition-transform hover:scale-110 duration-300"
+								className="w-12 h-12 bg-gray-500 rounded-full flex items-center justify-center cursor-pointer shadow-md hover:bg-gray-600 transition-transform hover:scale-110 duration-300"
 								onClick={handleAddProductClick}
 							>
 								<svg
@@ -293,7 +356,7 @@ const ProductList: React.FC = () => {
 									viewBox="0 0 24 24"
 									strokeWidth={2}
 									stroke="white"
-									className="w-8 h-8"
+									className="w-6 h-6"
 								>
 									<path
 										strokeLinecap="round"
@@ -307,7 +370,7 @@ const ProductList: React.FC = () => {
 
 					{productsData.map((product) => (
 						<div
-							className="product-card	bg-white rounded-lg	shadow-md p-4 cursor-pointer hover:shadow-lg transition-shadow duration-300"
+							className="product-card bg-white rounded-md shadow p-3 cursor-pointer hover:shadow-lg transition-shadow duration-200"
 							key={product.id}
 							onClick={() => handleProductClick(product)}
 						>
@@ -317,14 +380,19 @@ const ProductList: React.FC = () => {
 									"https://via.placeholder.com/200"
 								}
 								alt={product.name}
-								className="product-image w-full	h-40 object-cover rounded-md"
+								className="product-image w-full h-48 object-cover rounded"
 							/>
-							<div className="product-info mt-4">
-								<h3 className="product-name	text-lg	font-semibold text-gray-800	truncate">
+							<div className="product-info mt-3">
+								<h3 className="product-name text-sm font-medium text-gray-700 truncate">
 									{product.name}
 								</h3>
-								<p className="product-price	text-lg	text-pink-600">
-									₱{product.price}
+								<div className="flex justify-between">
+									<p className="product-price text-sm text-pink-500">
+										₱{product.price}
+									</p>
+								</div>
+								<p className="product-price text-sm text-black">
+									<b>STOCKS: {product.number_of_stock}</b>
 								</p>
 							</div>
 						</div>
@@ -344,9 +412,7 @@ const ProductList: React.FC = () => {
 								&times;
 							</button>
 
-							{/*	Modal content as 3 cards horizontally aligned */}
 							<div className="modal-content flex flex-row	gap-2 justify-center">
-								{/*	Column 1: Edit Product */}
 								<div className="edit-product card bg-white rounded-lg shadow-md	p-4	w-full sm:w-1/4	flex-shrink-0">
 									<h3 className="text-xl font-semibold text-gray-800 mb-4">
 										{isArchived
@@ -447,9 +513,16 @@ const ProductList: React.FC = () => {
 										/>
 										{mainImagePreview && (
 											<img
-												src={mainImagePreview}
+												src={
+													mainImagePreview instanceof
+													File
+														? URL.createObjectURL(
+																mainImagePreview
+														  )
+														: mainImagePreview
+												}
 												alt="Main Preview"
-												className="image-preview w-full	mt-4 rounded-md"
+												className="image-preview w-full mt-4 rounded-md"
 											/>
 										)}
 
@@ -475,7 +548,14 @@ const ProductList: React.FC = () => {
 														className="image-wrapper relative"
 													>
 														<img
-															src={image}
+															src={
+																image instanceof
+																File
+																	? URL.createObjectURL(
+																			image
+																	  )
+																	: image
+															}
 															alt={`Preview ${
 																index + 1
 															}`}
@@ -571,7 +651,6 @@ const ProductList: React.FC = () => {
 							</h2>
 
 							<div className="modal-content grid grid-cols-1 sm:grid-cols-2 gap-8">
-								{/* Left Column: Form Inputs */}
 								<div className="modal-form space-y-4">
 									<label className="block text-sm text-gray-700">
 										Product Name
@@ -647,13 +726,6 @@ const ProductList: React.FC = () => {
 											onChange={handleMainImageChange}
 											className="modal-input w-full px-4 py-2 border border-gray-300 rounded-md"
 										/>
-										{/* {mainImagePreview && (
-											<img
-												src={mainImagePreview}
-												alt="Main Preview"
-												className="image-preview w-full mt-4 rounded-md"
-											/>
-										)} */}
 
 										<label className="block text-sm text-gray-700 mt-6">
 											Additional Product Images (Max 5)

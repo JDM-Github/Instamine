@@ -23,7 +23,7 @@
 
 .nav-title {
 	position: relative;
-	color: #ff69b4;
+	// color: #ff69b4;
 	font-size: 2.5rem;
 	font-weight: bold;
 	margin-bottom: 50px;
@@ -32,7 +32,7 @@
 .nav-items {
 	font-size: 16px;
 	font-weight: bold;
-	color: #fff;
+	// color: #fff;
 	transition: color 0.3s;
 	width: 100%;
 	background-color: #d15895;
@@ -42,7 +42,7 @@
 }
 
 .nav-items:hover {
-	color: #ffd1dc;
+	// color: #ffd1dc;
 }
 
 .nav-items a {
@@ -67,8 +67,8 @@
 	transition: background-color 0.3s;
 }
 
-.nav-items.active,
-.nav-items a div:hover {
-	background-color: #ffffff;
-	color: #d15895;
-}
+// .nav-items.active,
+// .nav-items a div:hover {
+// 	background-color: #ffffff;
+// 	// color: #d15895;
+// }

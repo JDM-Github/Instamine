@@ -204,6 +204,7 @@ const ScheduleLivestream = () => {
 					setCurrentPage={setCurrPage}
 					itemsPerPage={limit}
 					total={total}
+					searchableHeaders={["url"]}
 				/>
 			</div>
 			<ViewLiveScheduleModal

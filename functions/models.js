@@ -386,6 +386,18 @@ const OrderBatch = sequelize.define(
 			},
 			onDelete: "CASCADE",
 		},
+		referenceNumber: {
+			type: DataTypes.STRING,
+			defaultValue: "",
+		},
+		paymentLink: {
+			type: DataTypes.STRING,
+			defaultValue: "",
+		},
+		expiryDate: {
+			type: DataTypes.DATE,
+			defaultValue: () => new Date(Date.now() + 900000),
+		},
 		orderPaid: {
 			type: DataTypes.BOOLEAN,
 			defaultValue: false,
@@ -409,6 +421,10 @@ const OrderBatch = sequelize.define(
 		allTrack: {
 			type: DataTypes.ARRAY(DataTypes.STRING),
 			defaultValue: [],
+		},
+		status: {
+			type: DataTypes.STRING,
+			defaultValue: "Pending",
 		},
 		toPay: {
 			type: DataTypes.BOOLEAN,

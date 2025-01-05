@@ -28,7 +28,7 @@ function IconSelect({ selectOptions }) {
 			components={{
 				Option: customOption,
 			}}
-			onChange={(e) => selectOptions.onChange(e.value)}
+			onChange={(e: any) => selectOptions.onChange(e.value)}
 			placeholder={selectOptions.placeholder ?? ""}
 			styles={{
 				control: (base) => ({
@@ -77,12 +77,16 @@ export default function TopTabulator({
 	searchPlaceholder,
 	buttons,
 	selectOptions,
+	searchQuery,
+	onSearchChange,
 }) {
 	return (
 		<div className="top-tabulator">
 			<input
 				className="search"
 				placeholder={searchPlaceholder || "Search..."}
+				value={searchQuery}
+				onChange={onSearchChange}
 			/>
 			<div className="right-side">
 				<div className="buttons">
@@ -99,7 +103,7 @@ export default function TopTabulator({
 				</div>
 				{selectOptions &&
 					selectOptions.map((select, selectIndex) => (
-						<IconSelect selectOptions={select} />
+						<IconSelect key={selectIndex} selectOptions={select} />
 					))}
 			</div>
 		</div>

@@ -13,19 +13,16 @@ import "./Navigation.scss";
 
 export default function Navigation() {
 	const location = useLocation();
-
 	return (
 		<div className="admin-navigation bg-pink-100 h-full min-h-screen w-64 flex flex-col p-4 z-50">
-			{/* Title */}
 			<div className="nav-title text-2xl font-bold text-pink-600 mb-6 text-center">
 				INSTAMINE
 			</div>
-			{/* Navigation Items */}
 			<div
 				className={`nav-items mb-2 p-1 px-3 rounded-lg ${
 					location.pathname === "/"
-						? "bg-pink-500 text-white"
-						: "hover:bg-pink-200"
+						? "bg-white text-pink-600"
+						: "text-white hover:bg-pink-600"
 				}`}
 				data-label="DASHBOARD"
 			>
@@ -37,8 +34,8 @@ export default function Navigation() {
 			<div
 				className={`nav-items mb-2 p-1 px-3 rounded-lg ${
 					location.pathname === "/stream"
-						? "bg-pink-500 text-white"
-						: "hover:bg-pink-200"
+						? "bg-white text-pink-600"
+						: "text-white hover:bg-pink-600"
 				}`}
 				data-label="START LIVE"
 			>
@@ -48,12 +45,11 @@ export default function Navigation() {
 				</Link>
 			</div>
 
-			{/* CompletedLive */}
 			<div
 				className={`nav-items mb-2 p-1 px-3 rounded-lg ${
 					location.pathname === "/scheduled-stream"
-						? "bg-pink-500 text-white"
-						: "hover:bg-pink-200"
+						? "bg-white text-pink-600"
+						: "text-white hover:bg-pink-600"
 				}`}
 				data-label="SCHEDULED LIVE"
 			>
@@ -68,8 +64,8 @@ export default function Navigation() {
 			<div
 				className={`nav-items mb-2 p-1 px-3 rounded-lg ${
 					location.pathname === "/completed-stream"
-						? "bg-pink-500 text-white"
-						: "hover:bg-pink-200"
+						? "bg-white text-pink-600"
+						: "text-white hover:bg-pink-600"
 				}`}
 				data-label="COMPLETED LIVE"
 			>
@@ -82,13 +78,12 @@ export default function Navigation() {
 				</Link>
 			</div>
 
-			{/* Divider */}
 			<hr className="my-4 border-pink-300" />
 			<div
 				className={`nav-items mb-2 p-1 px-3 rounded-lg ${
 					location.pathname === "/users"
-						? "bg-pink-500 text-white"
-						: "hover:bg-pink-200"
+						? "bg-white text-pink-600"
+						: "text-white hover:bg-pink-600"
 				}`}
 				data-label="USERS"
 			>
@@ -100,8 +95,8 @@ export default function Navigation() {
 			<div
 				className={`nav-items mb-2 p-1 px-3 rounded-lg ${
 					location.pathname === "/orders"
-						? "bg-pink-500 text-white"
-						: "hover:bg-pink-200"
+						? "bg-white text-pink-600"
+						: "text-white hover:bg-pink-600"
 				}`}
 				data-label="ORDERS"
 			>
@@ -116,10 +111,10 @@ export default function Navigation() {
 			<div
 				className={`nav-items mb-2 p-1 px-3 rounded-lg ${
 					location.pathname === "/delievered-orders"
-						? "bg-pink-500 text-white"
-						: "hover:bg-pink-200"
+						? "bg-white text-pink-600"
+						: "text-white hover:bg-pink-600"
 				}`}
-				data-label="DELIEVERED ORDERS"
+				data-label="DELIVERED ORDERS"
 			>
 				<Link
 					to="/delievered-orders"
@@ -129,14 +124,14 @@ export default function Navigation() {
 						icon={faShoppingCart}
 						className="text-lg"
 					/>
-					<div>DELIEVERED ORDERS</div>
+					<div>DELIVERED ORDERS</div>
 				</Link>
 			</div>
 			<div
 				className={`nav-items mb-2 p-1 px-3 rounded-lg ${
 					location.pathname === "/complete-orders"
-						? "bg-pink-500 text-white"
-						: "hover:bg-pink-200"
+						? "bg-white text-pink-600"
+						: "text-white hover:bg-pink-600"
 				}`}
 				data-label="COMPLETED ORDERS"
 			>
@@ -148,8 +143,8 @@ export default function Navigation() {
 			<div
 				className={`nav-items mb-2 p-1 px-3 rounded-lg ${
 					location.pathname === "/product-list"
-						? "bg-pink-500 text-white"
-						: "hover:bg-pink-200"
+						? "bg-white text-pink-600"
+						: "text-white hover:bg-pink-600"
 				}`}
 				data-label="PRODUCTS"
 			>

@@ -15,10 +15,12 @@ import OrderDetailsModal from "../../Component/OrderDetails.tsx";
 const headers = [
 	"Order ID",
 	"Customer ID",
-	"Is Paid",
-	"Subtotal",
-	"Discount",
-	"Shipping Fee",
+	"Customer Fullname",
+	"Customer Email",
+	// "Is Paid",
+	// "Subtotal",
+	// "Discount",
+	// "Shipping Fee",
 	"Total",
 	"Created At",
 	"Actions",
@@ -28,16 +30,18 @@ const renderRow = (item) => (
 	<>
 		<td>{item.id}</td>
 		<td>{item.userId}</td>
-		<td>{item.orderPaid ? "YES" : "NO"}</td>
+		<td>{item.User.firstName + " " + item.User.lastName}</td>
+		<td>{item.User.email}</td>
+		{/* <td>{item.orderPaid ? "YES" : "NO"}</td>
 		<td>{item.subTotalFee}</td>
 		<td>{item.discountFee}</td>
-		<td>{item.shoppingFee}</td>
+		<td>{item.shoppingFee}</td> */}
 		<td>{item.totalFee}</td>
 		<td>{item.createdAt.split("T")[0]}</td>
 	</>
 );
 
-const DelieveredOrders = () => {
+const DelieveredOrders = ({ setOpenModal, setSelectedUser }) => {
 	const [requestData, setRequestData] = useState([]);
 	const [currPage, setCurrPage] = useState(1);
 	const [total, setTotal] = useState(0);
@@ -58,12 +62,34 @@ const DelieveredOrders = () => {
 			label: "VIEW",
 			onClick: (id, item) => openModal(item),
 		},
-		// {
-		// 	icon: faMessage,
-		// 	className: "done-btn",
-		// 	label: "MESSAGE",
-		// },
+		{
+			icon: faMessage,
+			className: "done-btn",
+			label: "MESSAGE",
+			onClick: (id, item) => loadChatModal(item),
+		},
 	];
+
+	const loadChatModal = async (item) => {
+		try {
+			const data = await RequestHandler.handleRequest(
+				"post",
+				"chats/get-user-chat",
+				{ userId: "1", partnerId: item.userId }
+			);
+			if (data.success === false) {
+				toast.error(
+					data.message ||
+						"Error occurred. Please check your credentials."
+				);
+			} else {
+				setOpenModal(true);
+				setSelectedUser(data.chat);
+			}
+		} catch (error) {
+			toast.error(`An error occurred while requesting data. ${error}`);
+		}
+	};
 
 	const loadRequestData = async () => {
 		try {
@@ -111,6 +137,7 @@ const DelieveredOrders = () => {
 					setCurrentPage={setCurrPage}
 					itemsPerPage={limit}
 					total={total}
+					searchableHeaders={["id", "userId"]}
 				/>
 			</div>
 			<OrderDetailsModal

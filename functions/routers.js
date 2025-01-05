@@ -1,7 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 
-// const jwt = require("jsonwebtoken");
 const {
 	User,
 	Product,
@@ -17,10 +16,65 @@ const { isSeller } = require("./middleware");
 const sendEmail = require("./emailSender");
 
 const asyncHandler = require("express-async-handler");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 const expressAsyncHandler = require("express-async-handler");
 
-// const JWT_SECRET = process.env.JWT_SECRET || "instamine";
+
+const multer = require("multer");
+const { v2: cloudinary } = require("cloudinary");
+
+cloudinary.config({
+	cloud_name: "djheiqm47",
+	api_key: "692765673474153",
+	api_secret: "kT7k8hvxo-bqMWL0aHB2o3k90dA",
+});
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+async function uploadToCloudinary(buffer) {
+	return new Promise((resolve, reject) => {
+		cloudinary.uploader
+			.upload_stream({ resource_type: "auto" }, (error, result) => {
+				if (error) reject(error);
+				else resolve(result.secure_url);
+			})
+			.end(buffer);
+	});
+}
+
+class ImageHandler {
+	constructor() {
+		this.router = express.Router();
+		this.initializeRoutes();
+	}
+
+	initializeRoutes() {
+		this.router.post(
+			"/upload-image",
+			upload.single("file"),
+			expressAsyncHandler(this.uploadImageToCloudinary)
+		);
+	}
+
+	async uploadImageToCloudinary(req, res) {
+		const serviceFile = req.file;
+
+		try {
+			const uploadedUrl = await uploadToCloudinary(serviceFile.buffer);
+			console.log(uploadedUrl);
+			res.send({
+				success: true,
+				uploadedDocument: uploadedUrl,
+			});
+		} catch (error) {
+			res.send({
+				success: false,
+				message: `An error occurred while creating the request. ${error.message}`,
+			});
+		}
+	}
+}
 
 async function sendNotification(email, notificationMessage) {
 	if (!email || !notificationMessage) {
@@ -100,10 +154,69 @@ class ChatRouter {
 	initRoutes() {
 		this.router.post("/get-chats", expressAsyncHandler(this.getAllChats));
 		this.router.post(
+			"/get-user-chat",
+			expressAsyncHandler(this.getUserChat)
+		);
+		this.router.post(
 			"/retrieve-chat",
 			expressAsyncHandler(this.retrieveChats)
 		);
 		this.router.post("/message", expressAsyncHandler(this.messagePartner));
+	}
+
+	async getUserChat(req, res) {
+		const { userId, partnerId } = req.body;
+
+		try {
+			const chat = await Chat.findOne({ where: { userId } });
+			if (!chat) {
+				await Chat.create({
+					userId,
+					chatPartner: {},
+				});
+				res.send({ success: true, chat: {} });
+				return;
+			}
+
+			const partner = await User.findOne({
+				where: { id: partnerId },
+				attributes: ["id", "username", "profileImage"],
+			});
+
+			if (!partner) {
+				return res.send({ message: "Partner not found" });
+			}
+
+			const chatMessageId = chat.chatPartner[partnerId];
+			let chatMessage = await ChatMessage.findByPk(chatMessageId);
+
+			if (!chatMessage) {
+				const result = await addChatPartner(userId, partnerId);
+				if (!result.success) return res.send(result);
+				chatMessage = result.chatMessage;
+			}
+
+			const lastMessage = chatMessage.messages?.length
+				? chatMessage.messages[chatMessage.messages.length - 1]
+				: null;
+
+			res.send({
+				success: true,
+				chat: {
+					partnerId,
+					username: partner.username,
+					profileImage: partner.profileImage,
+					chatMessageId,
+					lastMessage,
+					createdAt: chatMessage.createdAt,
+				},
+			});
+		} catch (error) {
+			res.send({
+				message: "Could not retrieve chat",
+				details: error,
+			});
+		}
 	}
 
 	async getAllChats(req, res) {
@@ -121,7 +234,6 @@ class ChatRouter {
 			}
 
 			const partnerIds = Object.keys(chat.chatPartner);
-
 			const partners = await User.findAll({
 				where: { id: partnerIds },
 				attributes: ["id", "username", "profileImage"],
@@ -325,11 +437,11 @@ class UserRoute {
 					message: "User not found",
 				});
 			}
-
+			const isArchived = account.isArchived;
 			await account.update({ isArchived: !account.isArchived });
 			res.send({
 				success: true,
-				message: "Account archive status updated successfully",
+				message: !isArchived ? "The account has been locked successfully" : "The account has been unlocked successfully",
 				data: account,
 			});
 		} catch (error) {
@@ -605,6 +717,14 @@ class UserRoute {
 				});
 			}
 
+			if (user.isArchived) {
+				return res.send({
+					success: false,
+					message:
+						"User is locked. If you think this is wrong, please contact our support team.",
+				});
+			}
+
 			await user.update({
 				online: true,
 				logoutTime: null,
@@ -770,6 +890,7 @@ class ProductRoute {
 	async editCreateProduct(req, res) {
 		try {
 			const { productData } = req.body;
+			console.log(productData);
 			let product;
 			if (productData.id) {
 				product = await Product.findOne({
@@ -783,6 +904,8 @@ class ProductRoute {
 					price: productData.price,
 					number_of_stock: productData.number_of_stock,
 					specification: productData.specification,
+					product_image: productData.product_image,
+					product_images: productData.product_images,
 				});
 				return res.send({
 					success: true,
@@ -992,7 +1115,11 @@ class OrderRouter {
 		this.router.get("/allOrders", expressAsyncHandler(this.getAllOrders));
 		this.router.post("/createOrder", expressAsyncHandler(this.createOrder));
 		this.router.post("/bulkOrder", expressAsyncHandler(this.bulkOrder));
+		this.router.post("/paidOrder", expressAsyncHandler(this.paidOrder));
+		// paidOrder;
 		this.router.post("/cancelOrder", expressAsyncHandler(this.cancelOrder));
+		this.router.post("/declineOrder", expressAsyncHandler(this.declineOrder));
+		// declineOrder;
 		this.router.post("/shipOrder", expressAsyncHandler(this.shipOrder));
 		this.router.post(
 			"/delieverOrder",
@@ -1147,17 +1274,27 @@ class OrderRouter {
 				discountFee,
 				subTotalFee,
 				isPaid,
+				toShip,
 				email,
 				notificationMessage,
 			} = req.body;
 
-			const result = await sendNotification(email, notificationMessage);
-			if (!result) {
-				res.send({
-					success: false,
-					message: "Email sent unsuccessfully. Order is cancelled.",
-				});
-			}
+			// const user = await User.findOne({
+			// 	where: { id: userId },
+			// 	attributes: ["id", "email"],
+			// });
+			// if (!user) {
+			// 	return res.status(404).send({
+			// 		success: false,
+			// 		message: "User not found",
+			// 	});
+			// }
+			// if (!user.location) {
+			// 	return res.status(400).send({
+			// 		success: false,
+			// 		message: "User location must be assigned to place an order.",
+			// 	});
+			// }
 
 			const totalFee = subTotalFee + shoppingFee - discountFee;
 			const orderBatch = await OrderBatch.create({
@@ -1168,7 +1305,8 @@ class OrderRouter {
 				shoppingFee,
 				discountFee,
 				totalFee,
-				toShip: true,
+				toShip:
+					toShip !== undefined && toShip !== null ? toShip : false,
 				toRecieve: false,
 				isComplete: false,
 			});
@@ -1186,10 +1324,31 @@ class OrderRouter {
 			await Notification.create({
 				userId: userId,
 				title: "Order Placed Successfully",
-				description: `Your order has been placed successfully with a total of ₱${totalFee}. You will be notified once it is ready to ship.`,
+				description: `Your order has been placed successfully with a total of ₱${totalFee}.`,
 			});
 
 			res.send({ success: true, orderBatch });
+		} catch (error) {
+			res.send({ success: false, message: error.message });
+		}
+	}
+
+	async paidOrder(req, res) {
+		try {
+			const { id, email, notificationMessage } = req.body;
+
+			const result = await sendNotification(email, notificationMessage);
+			if (!result) {
+				res.send({
+					success: false,
+					message: "Email sent unsuccessfully. Order is cancelled.",
+				});
+			}
+			await OrderBatch.update(
+				{ orderPaid: true, toShip: true },
+				{ where: { id } }
+			);
+			res.send({ success: true });
 		} catch (error) {
 			res.send({ success: false, message: error.message });
 		}
@@ -1246,7 +1405,8 @@ class OrderRouter {
 
 	async getAllBatchOrder(req, res) {
 		try {
-			const { userId, toShip, toReceive, isComplete } = req.body;
+			const { userId, toShip, toReceive, isComplete, toProcess } =
+				req.body;
 			const whereClause = {};
 			if (userId !== undefined && userId !== null)
 				whereClause["userId"] = userId;
@@ -1259,6 +1419,7 @@ class OrderRouter {
 					isComplete,
 				},
 			});
+			// console.log(orders);
 
 			if (!orders || orders.length === 0) {
 				return res.status(404).send({
@@ -1272,7 +1433,7 @@ class OrderRouter {
 					orders,
 				});
 			}
-			const formattedOrders = orders.map((order) => {
+			const formattedOrders = orders.map(async (order) => {
 				const products = order.products.map((product) => ({
 					productId: product.productId,
 					name: product.name,
@@ -1285,12 +1446,28 @@ class OrderRouter {
 				}));
 
 				let status = "Pending";
+				let paymentLink = order.paymentLink;
+				let reference_number = order.referenceNumber;
 				if (order.toShip) {
 					status = "Pending";
 				} else if (order.toRecieve) {
 					status = "Delivered";
 				} else if (order.isComplete) {
 					status = "Completed";
+				} else if (toProcess) {
+					if (
+						order.status == "Pending" &&
+						// order.status != "Expired" &&
+						new Date() > new Date(order.expiryDate)
+					) {
+						status = "Expired";
+						await OrderBatch.update(
+							{ status: "Expired" },
+							{ where: { id: order.id } }
+						);
+					} else {
+						status = order.status;
+					}
 				}
 
 				return {
@@ -1304,10 +1481,14 @@ class OrderRouter {
 					products: products,
 					allTrack: order.allTrack,
 					createdAt: order.createdAt,
+					paymentLink,
+					reference_number,
 				};
 			});
-
-			res.send({ success: true, orders: formattedOrders });
+			res.send({
+				success: true,
+				orders: await Promise.all(formattedOrders),
+			});
 		} catch (error) {
 			res.status(500).send({ success: false, message: error.message });
 		}
@@ -1405,6 +1586,10 @@ class OrderRouter {
 					toShip,
 					toRecieve: toReceive,
 					isComplete,
+				},
+				include: {
+					model: User,
+					attributes: { exclude: [] },
 				},
 				limit: limit,
 				offset: offset,
@@ -1652,6 +1837,33 @@ class OrderRouter {
 				success: true,
 				message: "Order canceled and notification sent.",
 				notification: notification,
+			});
+		} catch (error) {
+			res.send({ success: false, message: error.message });
+		}
+	}
+
+	async declineOrder(req, res) {
+		try {
+			const { orderId, userId } = req.body;
+			const order = await OrderBatch.findByPk(orderId);
+			if (!order) {
+				return res.send({
+					success: false,
+					message: "Order does not exist.",
+				});
+			}
+			await order.destroy();
+			await Notification.create({
+				userId,
+				title: "Your Order has been declined.",
+				description: `Your order with ID ${orderId} has been declined.`,
+				isRead: false,
+			});
+
+			res.send({
+				success: true,
+				message: "Order declined successfully.",
 			});
 		} catch (error) {
 			res.send({ success: false, message: error.message });
@@ -1914,10 +2126,12 @@ const chatRouter = new ChatRouter().router;
 const productRouter = new ProductRoute().router;
 const orderRouter = new OrderRouter().router;
 const cartRouter = new CartProduct().router;
+const imageRouter = new ImageHandler().router;
 module.exports = {
 	userRouter,
 	productRouter,
 	chatRouter,
 	orderRouter,
 	cartRouter,
+	imageRouter,
 };

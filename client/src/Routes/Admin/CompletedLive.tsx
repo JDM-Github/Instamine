@@ -39,12 +39,12 @@ const CompletedLive = () => {
 			label: "VIEW",
 			onClick: (id, item) => openModal(item),
 		},
-		{
-			icon: faEye,
-			className: "delete-btn",
-			label: "ARCHIVE",
-			onClick: (id, item) => {},
-		},
+		// {
+		// 	icon: faEye,
+		// 	className: "delete-btn",
+		// 	label: "ARCHIVE",
+		// 	onClick: (id, item) => {},
+		// },
 	];
 
 	const loadRequestData = async () => {
@@ -88,6 +88,7 @@ const CompletedLive = () => {
 					setCurrentPage={setCurrPage}
 					itemsPerPage={limit}
 					total={total}
+					searchableHeaders={["id", "url"]}
 				/>
 			</div>
 			<ViewLiveScheduleModal

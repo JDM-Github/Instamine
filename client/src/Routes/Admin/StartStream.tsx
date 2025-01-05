@@ -37,6 +37,7 @@ const AdminLivestream = () => {
 	const isStream = state?.isStream || false;
 	const products = state?.products || [];
 
+	// const [numberOfViewer, setNumberOfViewer] = useState(0);
 	const [isStreaming, setIsStreaming] = useState(isStream);
 	const [livestreamUrl, setLivestreamUrl] = useState(streamUrl);
 	const [chatMessages, setChatMessages] = useState<Chat[]>([]);
@@ -52,23 +53,31 @@ const AdminLivestream = () => {
 					{}
 				);
 				if (data.success) {
-					setChatMessages((prevMessages) => {
-						const newMessages = data.messages.map((chat) => ({
-							id: chat.id,
-							userProfile: chat.userProfile,
-							user: chat.user,
-							message: chat.message,
-							timestamp: chat.timestamp,
-						}));
+					const newMessages = data.messages.map((chat) => ({
+						id: chat.id,
+						userProfile: chat.userProfile,
+						user: chat.user,
+						message: chat.message,
+						timestamp: chat.timestamp,
+					}));
+					setChatMessages(newMessages);
+					// setChatMessages((prevMessages) => {
+					// 	const newMessages = data.messages.map((chat) => ({
+					// 		id: chat.id,
+					// 		userProfile: chat.userProfile,
+					// 		user: chat.user,
+					// 		message: chat.message,
+					// 		timestamp: chat.timestamp,
+					// 	}));
 
-						const updatedMessages = [
-							...prevMessages,
-							...newMessages,
-						];
-						return updatedMessages.length > 30
-							? updatedMessages.slice(updatedMessages.length - 30)
-							: updatedMessages;
-					});
+					// 	const updatedMessages = [
+					// 		...prevMessages,
+					// 		...newMessages,
+					// 	];
+					// 	return updatedMessages.length > 30
+					// 		? updatedMessages.slice(updatedMessages.length - 30)
+					// 		: updatedMessages;
+					// });
 				} else {
 					toast.error("Failed to fetch chat messages:");
 				}
@@ -103,10 +112,8 @@ const AdminLivestream = () => {
 		if (!startStream && !isStreaming) fetchYTUrl();
 
 		if (isStreaming) {
-			fetchChatMessages();
-
 			if (!interval) {
-				const id = setInterval(fetchChatMessages, 8000);
+				const id = setInterval(fetchChatMessages, 1000);
 				setIntervalState(id);
 			}
 
@@ -156,10 +163,12 @@ const AdminLivestream = () => {
 				clearInterval(interval);
 				setIsStreaming(false);
 				setLivestreamUrl("");
+				setChatMessages([]);
+				setScheduledProducts([]);
 				toast.success("You ended the stream.");
 			}
 		} catch (error) {
-			// toast.error(`An error occurred while ending stream. ${error}`);
+			toast.error(`An error occurred while ending stream. ${error}`);
 		}
 	};
 
@@ -187,7 +196,6 @@ const AdminLivestream = () => {
 				toast.success("You started streaming...");
 			}
 		} catch (error) {
-			// toast.error(`An error occurred while start streaming. ${error}`);
 		}
 	};
 
@@ -253,14 +261,6 @@ const AdminLivestream = () => {
 		} else {
 			return <p>Video platform not supported for embedding.</p>;
 		}
-	};
-
-	const scheduledProduct = {
-		// name: "Pink Summer Dress",
-		// image: "https://via.placeholder.com/150",
-		// time: "2:00 PM",
-		// price: 49.99,
-		// description: "A beautiful summer dress perfect for any occasion.",
 	};
 
 	return (

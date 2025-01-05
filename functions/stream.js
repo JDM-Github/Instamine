@@ -73,7 +73,6 @@ class YoutubeRouter {
 						res.send({ success: false, message: "Live not found" });
 					}
 					await live.update({ isComplete: true });
-
 					if (!live.url) {
 						return res.status(400).json({
 							error: "URL are required",
@@ -274,18 +273,35 @@ class YoutubeRouter {
 			})
 		);
 
+		// this.router.post(
+		// 	"/process-chat",
+		// 	expressAsyncHandler(async (req, res) => {
+		// 		const chatMessages = await ChatSend.findAll();
+		// 		const receivedChats = chatMessages.map((chat) => ({
+		// 			userProfile: chat.userProfile,
+		// 			user: chat.user,
+		// 			message: chat.message,
+		// 		}));
+		// 		res.json({
+		// 			success: true,
+		// 			message: "Chat processed successfully.",
+		// 			messages: receivedChats,
+		// 		});
+		// 	})
+		// );
 		this.router.post(
 			"/process-chat",
 			expressAsyncHandler(async (req, res) => {
-				const chatMessages = await ChatSend.findAll();
-				const receivedChats = chatMessages.map((chat) => ({
+				const last30Chats = await ChatSend.findAll({
+					order: [["createdAt", "DESC"]],
+					limit: 30,
+				});
+				const receivedChats = last30Chats.reverse().map((chat) => ({
 					userProfile: chat.userProfile,
 					user: chat.user,
 					message: chat.message,
+					timestamp: chat.timestamp,
 				}));
-				await ChatReceive.destroy({ where: {} });
-				await ChatSend.destroy({ where: {} });
-				const value = await ChatReceive.bulkCreate(receivedChats);
 				res.json({
 					success: true,
 					message: "Chat processed successfully.",
@@ -297,22 +313,25 @@ class YoutubeRouter {
 		this.router.post(
 			"/fetch-chats",
 			expressAsyncHandler(async (req, res) => {
-				const { lastMessageId } = req.body;
-				let chats;
-
 				try {
-					if (lastMessageId) {
-						chats = await ChatReceive.findAll({
-							where: { id: { [Op.gt]: lastMessageId } },
-							order: [["id", "ASC"]],
-						});
-					} else {
-						chats = await ChatReceive.findAll({
-							order: [["id", "ASC"]],
-							limit: 30,
-						});
+					const ytmeta = await YoutubeMetadata.findOne();
+					if (ytmeta == null)
+					{
+						return res.send({success: false});
 					}
-					res.json({ success: true, chats });
+
+					const last30Chats = await ChatSend.findAll({
+						order: [["createdAt", "DESC"]], 
+						limit: 30,
+					});
+					const receivedChats = last30Chats.reverse().map((chat) => ({
+						id: chat.id,
+						userProfile: chat.userProfile,
+						user: chat.user,
+						message: chat.message,
+						timestamp: chat.timestamp,
+					}));
+					res.json({ success: true, chats: receivedChats });
 				} catch (error) {
 					console.error("Error fetching chats:", error);
 					res.status(500).json({

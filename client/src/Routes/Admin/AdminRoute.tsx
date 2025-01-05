@@ -21,7 +21,11 @@ import ScheduleLivestream from "./ScheduleLive.tsx";
 import CompletedLive from "./CompletedLive.tsx";
 
 export default function AdminRoute({ className }) {
-	const [isLoggedIn, setIsLoggedIn] = useState(false);
+	const [isLoggedIn, setIsLoggedIn] = useState(true);
+	const [openModal, setOpenModal] = useState(false);
+	const [selectedUser, setSelectedUser] = useState(null);
+	const [users, setUsers] = useState<any>([]);
+
 	return (
 		<>
 			{!isLoggedIn ? (
@@ -46,22 +50,55 @@ export default function AdminRoute({ className }) {
 								path="/completed-stream"
 								element={<CompletedLive />}
 							/>
-							<Route path="/users" element={<Users />} />
-							<Route path="/orders" element={<Orders />} />
+							<Route
+								path="/users"
+								element={
+									<Users
+										setOpenModal={setOpenModal}
+										setSelectedUser={setSelectedUser}
+									/>
+								}
+							/>
+							<Route
+								path="/orders"
+								element={
+									<Orders
+										setOpenModal={setOpenModal}
+										setSelectedUser={setSelectedUser}
+									/>
+								}
+							/>
 							<Route
 								path="/delievered-orders"
-								element={<DelieveredOrders />}
+								element={
+									<DelieveredOrders
+										setOpenModal={setOpenModal}
+										setSelectedUser={setSelectedUser}
+									/>
+								}
 							/>
 							<Route
 								path="/complete-orders"
-								element={<CompletedOrders />}
+								element={
+									<CompletedOrders
+										setOpenModal={setOpenModal}
+										setSelectedUser={setSelectedUser}
+									/>
+								}
 							/>
 							<Route
 								path="/product-list"
 								element={<ProductList />}
 							/>
 						</Routes>
-						<Chats />
+						<Chats
+							setOpenModal={setOpenModal}
+							setSelectedUser={setSelectedUser}
+							openModal={openModal}
+							selectedUser={selectedUser}
+							setUsers={setUsers}
+							users={users}
+						/>
 					</div>
 					<ToastContainer />
 				</div>
