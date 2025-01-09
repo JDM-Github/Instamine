@@ -93,88 +93,200 @@ const OrderDetailsModal = ({ isOpen, onClose, order }) => {
 			{isOpen && (
 				<div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
 					<div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-4xl">
-						<h3 className="text-2xl font-semibold text-pink-600 mb-6">
+						<h3 className="text-2xl font-semibold text-pink-600 mb-3 bg-pink-100 border-l-4 border-pink-600 rounded-lg p-3">
 							Order Information
 						</h3>
-						<div className="order-info mb-6">
-							<p className="text-sm text-gray-700">
-								<strong>Order ID:</strong> {order.id}
-							</p>
-							<p className="text-sm text-gray-700">
-								<strong>User ID:</strong> {order.userId}
-							</p>
-							<p className="text-sm text-gray-700">
-								<strong>Is Paid:</strong>{" "}
-								<span
-									className={
+						<div className="order-info mb-6 rounded-lg grid grid-cols-1 gap-2 bg-gray-50 p-2">
+							<div className="flex items-center">
+								<label
+									htmlFor="order-id"
+									className="w-1/3 text-sm font-medium text-gray-700"
+								>
+									Order ID:
+								</label>
+								<input
+									id="order-id"
+									type="text"
+									value={order.id}
+									readOnly
+									className="w-2/3 text-sm text-gray-700 bg-gray-100 p-2 border-none focus:outline-none"
+								/>
+							</div>
+							<div className="flex items-center">
+								<label
+									htmlFor="user-id"
+									className="w-1/3 text-sm font-medium text-gray-700"
+								>
+									User ID:
+								</label>
+								<input
+									id="user-id"
+									type="text"
+									value={order.userId}
+									readOnly
+									className="w-2/3 text-sm text-gray-700 bg-gray-100 p-2 border-none focus:outline-none"
+								/>
+							</div>
+							<div className="flex items-center">
+								<label
+									htmlFor="user-location"
+									className="w-1/3 text-sm font-medium text-gray-700"
+								>
+									User Location:
+								</label>
+								<input
+									id="user-location"
+									type="text"
+									value={order.User.location}
+									readOnly
+									className="w-2/3 text-sm text-gray-700 bg-gray-100 p-2 border-none focus:outline-none"
+								/>
+							</div>
+							<div className="flex items-center">
+								<label
+									htmlFor="user-phone"
+									className="w-1/3 text-sm font-medium text-gray-700"
+								>
+									User Phone Number:
+								</label>
+								<input
+									id="user-phone"
+									type="text"
+									value={order.User.phoneNumber}
+									readOnly
+									className="w-2/3 text-sm text-gray-700 bg-gray-100 p-2 border-none focus:outline-none"
+								/>
+							</div>
+							<div className="flex items-center">
+								<label
+									htmlFor="is-paid"
+									className="w-1/3 text-sm font-medium text-gray-700"
+								>
+									Is Paid:
+								</label>
+								<input
+									id="is-paid"
+									type="text"
+									value={order.orderPaid ? "Yes" : "No"}
+									readOnly
+									className={`w-2/3 text-sm ${
 										order.orderPaid
 											? "text-green-600"
 											: "text-red-600"
-									}
+									} bg-gray-100 p-2 border-none focus:outline-none`}
+								/>
+							</div>
+							<div className="flex items-center">
+								<label
+									htmlFor="discount-fee"
+									className="w-1/3 text-sm font-medium text-gray-700"
 								>
-									{order.orderPaid ? "Yes" : "No"}
-								</span>
-							</p>
-							{/* <p className="text-sm text-gray-700">
-								<strong>Subtotal Fee:</strong> ₱
-								{order.subTotalFee}
-							</p>
-							<p className="text-sm text-gray-700">
-								<strong>Discount Fee:</strong> ₱
-								{order.discountFee}
-							</p>
-							<p className="text-sm text-gray-700">
-								<strong>Shipping Fee:</strong> ₱
-								{order.shoppingFee}
-							</p> */}
-							<p className="text-sm text-gray-700">
-								<strong>Total Fee:</strong> ₱{order.totalFee}
-							</p>
-							<p className="text-sm text-gray-700">
-								<strong>Order Created:</strong>{" "}
-								{order.createdAt.split("T")[0]}
-							</p>
+									Discount Fee:
+								</label>
+								<input
+									id="discount-fee"
+									type="text"
+									value={`₱${order.discountFee}`}
+									readOnly
+									className="w-2/3 text-sm text-gray-700 bg-gray-100 p-2 border-none focus:outline-none"
+								/>
+							</div>
+							<div className="flex items-center">
+								<label
+									htmlFor="shipping-fee"
+									className="w-1/3 text-sm font-medium text-gray-700"
+								>
+									Shipping Fee:
+								</label>
+								<input
+									id="shipping-fee"
+									type="text"
+									value={`₱${order.shoppingFee}`}
+									readOnly
+									className="w-2/3 text-sm text-gray-700 bg-gray-100 p-2 border-none focus:outline-none"
+								/>
+							</div>
+							<div className="flex items-center">
+								<label
+									htmlFor="total-fee"
+									className="w-1/3 text-sm font-medium text-gray-700"
+								>
+									Total Fee:
+								</label>
+								<input
+									id="total-fee"
+									type="text"
+									value={`₱${order.totalFee}`}
+									readOnly
+									className="w-2/3 text-sm text-gray-700 bg-gray-100 p-2 border-none focus:outline-none"
+								/>
+							</div>
+							<div className="flex items-center">
+								<label
+									htmlFor="order-created"
+									className="w-1/3 text-sm font-medium text-gray-700"
+								>
+									Order Created:
+								</label>
+								<input
+									id="order-created"
+									type="text"
+									value={order.createdAt.split("T")[0]}
+									readOnly
+									className="w-2/3 text-sm text-gray-700 bg-gray-100 p-2 border-none focus:outline-none"
+								/>
+							</div>
 						</div>
 
-						<div className="product-list space-y-4 mb-6">
-							{order.products.map((product, index) => (
-								<div
-									key={index}
-									className="flex items-center justify-between bg-gray-100 p-4 rounded-lg shadow-sm"
-								>
-									<img
-										src={product.productImage}
-										alt={product.name}
-										className="w-16 h-16 object-cover rounded-md"
-									/>
-									<div className="flex-1 pl-4">
-										<p className="text-sm font-semibold text-gray-800">
-											<strong>Name:</strong>{" "}
-											{product.name}
-										</p>
-										<p className="text-sm text-gray-700">
-											<strong>Price:</strong> ₱
-											{product.price}
-										</p>
-										<p className="text-sm text-gray-700">
-											<strong>Quantity:</strong> x
-											{product.numberOfProduct}
-										</p>
-										<p className="text-sm text-gray-700">
-											<strong>Rated:</strong>{" "}
-											<span
-												className={
+						<div
+							className="product-list overflow-y-auto max-h-72 mb-6"
+							style={{ maxHeight: "300px" }}
+						>
+							<table className="w-full table-auto bg-gray-100 rounded-lg shadow-sm">
+								<thead>
+									<tr className="bg-gray-200 text-gray-700 text-left">
+										<th className="p-2">Image</th>
+										<th className="p-2">Name</th>
+										<th className="p-2">Price</th>
+										<th className="p-2">Quantity</th>
+										<th className="p-2">Rated</th>
+									</tr>
+								</thead>
+								<tbody>
+									{order.products.map((product, index) => (
+										<tr
+											key={index}
+											className="border-b last:border-none"
+										>
+											<td className="p-2">
+												<img
+													src={product.productImage}
+													alt={product.name}
+													className="w-16 h-16 object-cover rounded-md"
+												/>
+											</td>
+											<td className="p-2 text-gray-800">
+												{product.name}
+											</td>
+											<td className="p-2 text-gray-700">
+												₱{product.price}
+											</td>
+											<td className="p-2 text-gray-700">
+												x{product.numberOfProduct}
+											</td>
+											<td
+												className={`p-2 ${
 													product.isRated
 														? "text-green-600"
 														: "text-red-600"
-												}
+												}`}
 											>
 												{product.isRated ? "Yes" : "No"}
-											</span>
-										</p>
-									</div>
-								</div>
-							))}
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
 						</div>
 
 						<div className="flex justify-end">
@@ -190,6 +302,7 @@ const OrderDetailsModal = ({ isOpen, onClose, order }) => {
 			)}
 		</>
 	);
+
 };
 
 export default OrderDetailsModal;

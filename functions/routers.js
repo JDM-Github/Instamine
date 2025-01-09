@@ -537,6 +537,7 @@ class UserRoute {
 				});
 			}
 			await user.update({
+				profileImage,
 				firstName,
 				lastName,
 				email,
@@ -1279,22 +1280,22 @@ class OrderRouter {
 				notificationMessage,
 			} = req.body;
 
-			// const user = await User.findOne({
-			// 	where: { id: userId },
-			// 	attributes: ["id", "email"],
-			// });
-			// if (!user) {
-			// 	return res.status(404).send({
-			// 		success: false,
-			// 		message: "User not found",
-			// 	});
-			// }
-			// if (!user.location) {
-			// 	return res.status(400).send({
-			// 		success: false,
-			// 		message: "User location must be assigned to place an order.",
-			// 	});
-			// }
+			const user = await User.findOne({
+				where: { id: userId },
+				attributes: ["id", "email", "location"],
+			});
+			if (!user) {
+				return res.status(404).send({
+					success: false,
+					message: "User not found",
+				});
+			}
+			if (!user.location) {
+				return res.status(400).send({
+					success: false,
+					message: "User location must be assigned to place an order.",
+				});
+			}
 
 			const totalFee = subTotalFee + shoppingFee - discountFee;
 			const orderBatch = await OrderBatch.create({
