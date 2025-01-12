@@ -224,22 +224,20 @@ const generateReferenceNumber = () => {
 
 const paypal = require("@paypal/checkout-server-sdk");
 const PAYPAL_CLIENT_ID =
-	"AacQyjvGmPHYV4DobiID0HSvyo-mnDYT9uTYkPWL-lv6xGWwk_hmcWxIL1sBjbRldvfUPcI-fPclSm3C";
+	"AQIMNbOm-vXnugNaSbc1RC9cCAisKLch9PtT-XjORa6ZzjcONkxWE79r9A1sQBGAiiUOS8Jc2P_Zv6rC";
 const PAYPAL_CLIENT_SECRET =
-	"ED0PtkNy8-VcEkTjfMtNvg4JAZskCyrlEhKZ3tSTAYDGqabedKJqUSprN79plAnS556ATl5kxxpnasx0";
-const environment = new paypal.core.SandboxEnvironment(
+	"EFmdBR2VUQ6aJptN7eLd9uPJNKsGPhDwAdpCwMzkQS7iTDP4t24geeEeIrEBz_-EGANaBLW1ouLiwEX_";
+
+const environment = new paypal.core.LiveEnvironment(
 	PAYPAL_CLIENT_ID,
 	PAYPAL_CLIENT_SECRET
 );
+
 const client = new paypal.core.PayPalHttpClient(environment);
 
 router.post("/create-payment", async (req, res) => {
 	const { amount, description, walletType, products, users, order } =
 		req.body;
-
-	console.log(products);
-	console.log(users);
-	console.log(order);
 
 	const adjustedLineItems = products.map((item) => {
 		return {
@@ -285,8 +283,8 @@ router.post("/create-payment", async (req, res) => {
 			brand_name: "Instamine",
 			landing_page: "BILLING",
 			user_action: "PAY_NOW",
-			return_url: "https://yourdomain.com/payment-success",
-			cancel_url: "https://yourdomain.com/payment-failed",
+			return_url: "https://instantmine.netlify.app/.netlify/functions/api/payment-success",
+			cancel_url: "https://instantmine.netlify.app/.netlify/functions/api/payment-failed",
 		},
 	});
 	try {
@@ -308,6 +306,85 @@ router.post("/create-payment", async (req, res) => {
 		res.status(500).json({ error: "Failed to create PayPal payment" });
 	}
 });
+
+router.get("/payment-success", async (req, res) => {
+	const { token } = req.query;
+	if (!token) {
+		return res.status(400).json({ error: "Payment token is missing" });
+	}
+
+	try {
+		const captureRequest = new paypal.orders.OrdersCaptureRequest(token);
+		const captureResponse = await client.execute(captureRequest);
+
+		if (captureResponse.result.status !== "COMPLETED") {
+			return res.status(400).json({ error: "Payment not completed" });
+		}
+
+		const order = await OrderBatch.findOne({
+			where: {
+				paymentLink: `https://www.paypal.com/checkoutnow?token=${token}`,
+			},
+		});
+		if (!order) {
+			return res.status(404).json({ error: "Order not found" });
+		}
+
+		await OrderBatch.update(
+			{ status: "Paid" },
+			{ where: { id: order.id } }
+		);
+
+		await Notification.create({
+			userId: order.userId,
+			title: "Payment Successful",
+			message: `Your payment for reference number ${order.referenceNumber} has been successfully captured.`,
+		});
+
+		res.redirect(
+			`/payment-success-page?referenceNumber=${order.referenceNumber}`
+		);
+	} catch (error) {
+		console.error("Error capturing payment:", error);
+		res.status(500).json({ error: "Failed to process payment" });
+	}
+});
+
+router.get("/payment-failed", async (req, res) => {
+	const { token } = req.query; 
+	if (!token) {
+		return res.status(400).json({ error: "Payment token is missing" });
+	}
+
+	try {
+		const order = await OrderBatch.findOne({
+			where: {
+				paymentLink: `https://www.paypal.com/checkoutnow?token=${token}`,
+			},
+		});
+		if (!order) {
+			return res.status(404).json({ error: "Order not found" });
+		}
+
+		await OrderBatch.update(
+			{ status: "Failed", paymentFailedAt: new Date() },
+			{ where: { id: order.id } }
+		);
+
+		await Notification.create({
+			userId: order.userId,
+			title: "Payment Failed",
+			message: `Your payment for reference number ${order.referenceNumber} failed. Please try again.`,
+		});
+
+		res.redirect("/payment-failed-page");
+	} catch (error) {
+		console.error("Error handling payment failure:", error);
+		res.status(500).json({ error: "Failed to process payment failure" });
+	}
+});
+
+
 
 app.use(bodyParser.json());
 app.use(express.json());

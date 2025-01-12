@@ -441,7 +441,9 @@ class UserRoute {
 			await account.update({ isArchived: !account.isArchived });
 			res.send({
 				success: true,
-				message: !isArchived ? "The account has been locked successfully" : "The account has been unlocked successfully",
+				message: !isArchived
+					? "The account has been locked successfully"
+					: "The account has been unlocked successfully",
 				data: account,
 			});
 		} catch (error) {
@@ -569,7 +571,7 @@ class UserRoute {
 		} = req.body;
 
 		try {
-			const normalizedEmail = email.toLowerCase().trim();
+			const normalizedEmaQil = email.toLowerCase().trim();
 			const user = await User.findOne({
 				where: {
 					[Op.or]: [
@@ -582,6 +584,27 @@ class UserRoute {
 				return res.send({
 					success: true,
 					message: "Email or Username is already being used.",
+				});
+			}
+
+			const currentDate = new Date();
+			const userBirthdate = new Date(birthdate);
+			const age = currentDate.getFullYear() - userBirthdate.getFullYear();
+			const monthDifference =
+				currentDate.getMonth() - userBirthdate.getMonth();
+			if (
+				monthDifference < 0 ||
+				(monthDifference === 0 &&
+					currentDate.getDate() < userBirthdate.getDate())
+			) {
+				age--;
+			}
+
+			if (age < 15) {
+				return res.send({
+					success: false,
+					message:
+						"You must be at least 15 years old to create an account.",
 				});
 			}
 
